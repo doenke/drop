@@ -1,50 +1,133 @@
 /*
- * Palette und Formsprache als Custom Properties.
+ * Farben und Formsprache.
  *
- * Diese Datei ist der einzige Ort mit konkreten Farbwerten — style.css
- * greift ausschliesslich ueber var() darauf zu. Wenn das Basis-CSS der
- * Kanonenwiese vorliegt, wird nur dieser Block ersetzt; am Rest der App
- * aendert sich dann nichts.
+ * Der obere Teil ist 1:1 das zentrale Theme der Kanonenwiese
+ * (assets.kanonenwiese.de/css/central_style.css): dieselben Token-Namen,
+ * dieselben Werte, dieselbe Light/Dark-Mechanik. Aktualisiert sich das
+ * zentrale Theme, werden hier nur diese Bloecke nachgezogen.
+ *
+ * Der untere Teil sind drop-eigene Tokens. Sie leiten sich per color-mix()
+ * aus den zentralen ab, damit eine geaenderte Palette automatisch
+ * durchschlaegt und es keine zweite Farbquelle gibt.
  */
 
+/* =========================================================
+   Zentrale Theme-Tokens (aus central_style.css)
+   ========================================================= */
+
 :root {
-  /* Flaechen */
-  --bg: #0b0f1a;
-  --bg-deep: #060911;
-  --surface: rgb(255 255 255 / 4%);
-  --surface-strong: rgb(255 255 255 / 7%);
-  --surface-sunken: rgb(0 0 0 / 25%);
-  --border: rgb(255 255 255 / 10%);
-  --border-strong: rgb(255 255 255 / 18%);
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --accent: #0f766e;
+  --accent-2: #155e75;
+  --border: #e5e7eb;
 
-  /* Text */
-  --text: #eaf0ff;
-  --text-muted: #9aa7c2;
-  --text-faint: #6b7794;
+  --radius: 14px;
+  --container: 1100px;
 
-  /* Akzent */
-  --accent: #5eead4;
-  --accent-2: #7c8cff;
-  --accent-3: #f472b6;
+  --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Helvetica Neue", sans-serif;
+
+  /* drop, pro Modus verschieden */
+  --accent-ink: #ffffff;
+  --shadow: 0 16px 40px rgb(15 23 42 / 10%);
+  --glass: 78%;
+  --veil: 0.16;
+  --faint: 100%;
+  --ok: #15803d;
+  --warn: #b45309;
+  --danger: #be123c;
+}
+
+/* System-Darkmode (nur wenn kein Override gesetzt ist) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f172a;
+    --card: #020617;
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #0ea5e9;
+    --border: #1e293b;
+
+    --accent-ink: #04121a;
+    --shadow: 0 16px 48px rgb(0 0 0 / 45%);
+    --glass: 55%;
+    --veil: 0.42;
+    --faint: 80%;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --danger: #fb7185;
+  }
+}
+
+/* Manueller Override */
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #020617;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-2: #0ea5e9;
+  --border: #1e293b;
+
   --accent-ink: #04121a;
-  --accent-soft: rgb(94 234 212 / 14%);
-
-  /* Signale */
+  --shadow: 0 16px 48px rgb(0 0 0 / 45%);
+  --glass: 55%;
+  --veil: 0.42;
+  --faint: 80%;
   --ok: #4ade80;
   --warn: #fbbf24;
   --danger: #fb7185;
+}
 
-  /* Effekte */
-  --glow: 0 0 0 1px rgb(94 234 212 / 25%), 0 8px 32px rgb(94 234 212 / 18%);
-  --glow-strong: 0 0 0 1px rgb(94 234 212 / 45%), 0 12px 44px rgb(94 234 212 / 32%);
-  --shadow: 0 16px 48px rgb(0 0 0 / 45%);
+:root[data-theme="light"] {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --accent: #0f766e;
+  --accent-2: #155e75;
+  --border: #e5e7eb;
+
+  --accent-ink: #ffffff;
+  --shadow: 0 16px 40px rgb(15 23 42 / 10%);
+  --glass: 78%;
+  --veil: 0.16;
+  --faint: 100%;
+  --ok: #15803d;
+  --warn: #b45309;
+  --danger: #be123c;
+}
+
+/* =========================================================
+   Abgeleitete drop-Tokens
+   ========================================================= */
+
+:root {
+  /* Glasflaechen: die Card-Farbe halbdurchlaessig ueber dem Hintergrund. */
+  --surface: color-mix(in srgb, var(--card) var(--glass), transparent);
+  --surface-strong: color-mix(in srgb, var(--card) calc(var(--glass) + 14%), transparent);
+  --surface-sunken: color-mix(in srgb, var(--text) 6%, transparent);
+
+  --border-strong: color-mix(in srgb, var(--border) 65%, var(--text));
+  --text-faint: color-mix(in srgb, var(--muted) var(--faint), var(--bg));
+
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --glow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+    0 8px 32px color-mix(in srgb, var(--accent) 20%, transparent);
+  --glow-strong:
+    0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent),
+    0 12px 44px color-mix(in srgb, var(--accent) 34%, transparent);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-pill: 999px;
   --blur: 18px;
 
-  /* Form */
-  --radius: 18px;
-  --radius-sm: 12px;
-  --radius-pill: 999px;
-
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }

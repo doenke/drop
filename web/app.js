@@ -28,6 +28,7 @@
     joinForm: document.getElementById('join-form'),
     joinCode: document.getElementById('join-code'),
     qr: document.getElementById('qr'),
+    qrFallback: document.getElementById('qr-fallback'),
     roomCode: document.getElementById('room-code'),
     members: document.getElementById('members'),
     btnCopyLink: document.getElementById('btn-copy-link'),
@@ -42,6 +43,7 @@
     feedEmpty: document.getElementById('feed-empty'),
     dropzone: document.getElementById('dropzone'),
     toasts: document.getElementById('toasts'),
+    themeToggle: document.getElementById('theme-toggle'),
   };
 
   const state = {
@@ -233,6 +235,8 @@
     state.lastTextSeq = msg.textSeq || 0;
 
     el.roomCode.textContent = msg.code.replace(/-/g, ' ');
+    el.qr.hidden = false;
+    el.qrFallback.hidden = true;
     el.qr.src = `/api/qr?token=${encodeURIComponent(msg.token)}`;
     updateMembers();
 
@@ -591,6 +595,11 @@
     send({ type: 'join', code });
   });
 
+  el.qr.addEventListener('error', () => {
+    el.qr.hidden = true;
+    el.qrFallback.hidden = false;
+  });
+
   el.btnCopyLink.addEventListener('click', () => copyText(state.room ? state.room.url : ''));
   el.btnCopyCode.addEventListener('click', () => copyText(state.room ? state.room.code.replace(/-/g, ' ') : ''));
   el.btnLeave.addEventListener('click', () => leaveRoom());
@@ -644,6 +653,42 @@
     if (text && text.trim()) sendTextItem(text);
   });
 
+  /* ----------------------------------------------------------- Farbschema */
+
+  // Ohne Override folgt drop dem Betriebssystem, wie der Rest der
+  // Kanonenwiese. Der Umschalter setzt data-theme auf der Wurzel — dieselbe
+  // Mechanik, die das zentrale Theme vorgibt.
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function effectiveTheme() {
+    return document.documentElement.dataset.theme
+      || (darkQuery.matches ? 'dark' : 'light');
+  }
+
+  function applyTheme(theme) {
+    if (theme) {
+      document.documentElement.dataset.theme = theme;
+      try { localStorage.setItem('drop-theme', theme); } catch { /* egal */ }
+    }
+    const dark = effectiveTheme() === 'dark';
+    el.themeToggle.textContent = dark ? 'Hell' : 'Dunkel';
+    el.themeToggle.title = dark ? 'Zu hell wechseln' : 'Zu dunkel wechseln';
+    // Die Farbe der Browser-Leiste folgt sonst weiter dem System statt dem
+    // gewählten Schema.
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      if (!document.documentElement.dataset.theme) return;
+      meta.removeAttribute('media');
+      meta.content = dark ? '#0f172a' : '#f6f7f9';
+    });
+  }
+
+  el.themeToggle.addEventListener('click', () => {
+    applyTheme(effectiveTheme() === 'dark' ? 'light' : 'dark');
+  });
+  darkQuery.addEventListener('change', () => {
+    if (!document.documentElement.dataset.theme) applyTheme(null);
+  });
+
   /* ------------------------------------------------------------------ Start */
 
   async function loadAccount() {
@@ -663,6 +708,7 @@
   }
 
   function start() {
+    applyTheme(null);
     showLanding();
     updateFeedEmpty();
     loadAccount();

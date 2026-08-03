@@ -6,29 +6,35 @@
    und ausgeblendete Panels blieben sichtbar bzw. faengen Klicks ab. */
 [hidden] { display: none !important; }
 
+html { -webkit-text-size-adjust: 100%; }
 html, body { height: 100%; }
 
 body {
   margin: 0;
   min-height: 100%;
   padding: 0 max(1rem, env(safe-area-inset-left)) calc(2rem + env(safe-area-inset-bottom));
-  font-family: var(--font-sans);
+  font-family: var(--font);
   font-size: 16px;
   line-height: 1.55;
   color: var(--text);
-  background: var(--bg-deep);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-/* Farbige Schleier im Hintergrund — sie tragen den Glow der Oberflaeche. */
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Farbige Schleier im Hintergrund — sie tragen den Glow der Oberflaeche.
+   Im hellen Modus deutlich zurueckgenommen (--veil). */
 .glow-field {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   background:
-    radial-gradient(120% 90% at 50% -20%, var(--bg) 0%, var(--bg-deep) 70%);
+    radial-gradient(120% 90% at 50% -20%,
+      color-mix(in srgb, var(--accent) 8%, var(--bg)) 0%, var(--bg) 70%);
 }
 .glow-field span {
   position: absolute;
@@ -37,13 +43,18 @@ body {
   height: 45vmax;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.5;
+  opacity: var(--veil);
 }
 .glow-field span:nth-child(1) { background: var(--accent); top: -18vmax; left: -10vmax; }
-.glow-field span:nth-child(2) { background: var(--accent-2); top: 20vmax; right: -16vmax; opacity: 0.4; }
-.glow-field span:nth-child(3) { background: var(--accent-3); bottom: -22vmax; left: 25vw; opacity: 0.25; }
+.glow-field span:nth-child(2) { background: var(--accent-2); top: 20vmax; right: -16vmax; }
+.glow-field span:nth-child(3) {
+  background: color-mix(in srgb, var(--accent) 50%, var(--accent-2));
+  bottom: -22vmax;
+  left: 25vw;
+  opacity: calc(var(--veil) * 0.6);
+}
 
-main { width: min(72rem, 100%); margin: 0 auto; }
+main { width: min(var(--container), 100%); margin: 0 auto; }
 
 /* Kopfzeile */
 
@@ -52,7 +63,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  width: min(72rem, 100%);
+  width: min(var(--container), 100%);
   margin: 0 auto;
   padding: 1.25rem 0;
 }
@@ -75,7 +86,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   box-shadow: var(--glow);
 }
 
-.topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+.topbar-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 
 .conn {
   display: inline-flex;
@@ -86,7 +97,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   border-radius: var(--radius-pill);
   background: var(--surface);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .conn-dot {
   width: 0.5rem;
@@ -94,13 +105,30 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   border-radius: 50%;
   background: var(--text-faint);
 }
-.conn[data-state="online"] .conn-dot { background: var(--ok); box-shadow: 0 0 0 4px rgb(74 222 128 / 15%); }
+.conn[data-state="online"] .conn-dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 18%, transparent);
+}
 .conn[data-state="connecting"] .conn-dot { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
 .conn[data-state="offline"] .conn-dot { background: var(--danger); }
 
 @keyframes pulse { 50% { opacity: 0.35; } }
 
-.account { font-size: 0.85rem; color: var(--text-muted); }
+.account { font-size: 0.85rem; color: var(--muted); }
+
+/* Umschalter fuer das Farbschema, gleiche Formsprache wie im zentralen Theme */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
 
 /* Karten */
 
@@ -129,7 +157,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   flex-wrap: wrap;
 }
 
-.lede { margin: 0 0 1.25rem; color: var(--text-muted); max-width: 34rem; }
+.lede { margin: 0 0 1.25rem; color: var(--muted); max-width: 34rem; }
 .hint { margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--text-faint); }
 .hero-actions { margin-top: 1rem; }
 
@@ -152,9 +180,8 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
-.btn:hover { background: var(--surface-strong); transform: translateY(-1px); }
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
 .btn:active { transform: translateY(0); }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .btn-primary {
@@ -166,7 +193,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
 .btn-primary:hover { box-shadow: var(--glow-strong); }
 
 .btn-lg { padding: 0.8rem 1.6rem; font-size: 1rem; }
-.btn-quiet { background: transparent; border-color: var(--border); color: var(--text-muted); }
+.btn-quiet { background: transparent; border-color: var(--border); color: var(--muted); }
 
 .input {
   width: 100%;
@@ -210,6 +237,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   box-shadow: var(--shadow), var(--glow);
 }
 
+/* Der QR braucht unabhaengig vom Farbschema hohen Kontrast auf Weiss. */
 .invite-qr {
   padding: 0.7rem;
   border-radius: var(--radius-sm);
@@ -218,6 +246,20 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   line-height: 0;
 }
 .invite-qr img { display: block; width: 13.75rem; height: 13.75rem; }
+
+/* Fällt das Bild aus, muss die Karte trotzdem etwas Sinnvolles zeigen. */
+.qr-fallback {
+  display: grid;
+  place-items: center;
+  width: 13.75rem;
+  height: 13.75rem;
+  margin: 0;
+  padding: 1.5rem;
+  color: #1f2937;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: center;
+}
 
 .invite-body { flex: 1 1 18rem; }
 
@@ -228,14 +270,14 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   font-weight: 600;
   letter-spacing: 0.01em;
   color: transparent;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2) 60%, var(--accent-3));
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   background-clip: text;
   overflow-wrap: anywhere;
 }
 
 .invite-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.members { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
+.members { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--muted); }
 
 .live-text {
   width: 100%;
@@ -326,7 +368,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
   display: grid;
   place-items: center;
   padding: 2rem;
-  background: rgb(6 9 17 / 72%);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -367,7 +409,7 @@ main { width: min(72rem, 100%); margin: 0 auto; }
 .toast[data-kind="error"] { border-color: var(--danger); color: var(--danger); }
 .toast[data-kind="ok"] { border-color: var(--accent); color: var(--accent); }
 
-.noscript { max-width: 40rem; margin: 2rem auto; color: var(--text-muted); }
+.noscript { max-width: 40rem; margin: 2rem auto; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
