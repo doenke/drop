@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/doenke/drop/internal/auth"
 	"github.com/doenke/drop/internal/config"
 )
 
@@ -34,11 +35,23 @@ func run(log *slog.Logger) error {
 		log.Warn("DROP_SESSION_KEY nicht gesetzt — Schlüssel zur Laufzeit erzeugt, Sessions überleben keinen Neustart")
 	}
 
+	signer := auth.NewSigner(cfg.SessionKey, cfg.SessionTTL, cfg.CookieSecure())
+
+	startupCtx, cancelStartup := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancelStartup()
+	oidcAuth, err := auth.NewOIDC(startupCtx, cfg.OIDCIssuer, cfg.OIDCClientID, cfg.OIDCClientSecret,
+		cfg.RedirectURL(), cfg.OIDCScopes, signer, log)
+	if err != nil {
+		return err
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
+	oidcAuth.Mount(mux)
+	mux.HandleFunc("GET /api/me", signer.MeHandler)
 	mountStatic(mux)
 
 	srv := &http.Server{
