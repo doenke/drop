@@ -1,0 +1,19 @@
+# Vorlage für den Homelab-Compose-Stack. Wie gardenglow und autostrom wird
+# direkt aus dem Repo gebaut; ein Volume braucht drop nicht, weil nichts
+# gespeichert wird.
+
+services:
+  drop:
+    build: https://github.com/doenke/drop.git#main
+    image: drop-drop:latest
+    container_name: drop
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    networks:
+      - bridge-net
+
+networks:
+  bridge-net:
+    external: true
