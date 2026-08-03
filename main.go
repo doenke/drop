@@ -15,6 +15,7 @@ import (
 	"github.com/doenke/drop/internal/auth"
 	"github.com/doenke/drop/internal/config"
 	"github.com/doenke/drop/internal/httpx"
+	"github.com/doenke/drop/internal/qr"
 	"github.com/doenke/drop/internal/room"
 	"github.com/doenke/drop/internal/ws"
 )
@@ -73,6 +74,7 @@ func run(log *slog.Logger) error {
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	mux.Handle("GET /ws", wsHandler)
+	mux.Handle("GET /api/qr", qr.New(hub, limiter, cfg.RoomURL, cfg.TrustProxy))
 	oidcAuth.Mount(mux)
 	mux.HandleFunc("GET /api/me", signer.MeHandler)
 	mountStatic(mux)
