@@ -1,0 +1,50 @@
+/*
+ * Palette und Formsprache als Custom Properties.
+ *
+ * Diese Datei ist der einzige Ort mit konkreten Farbwerten — style.css
+ * greift ausschliesslich ueber var() darauf zu. Wenn das Basis-CSS der
+ * Kanonenwiese vorliegt, wird nur dieser Block ersetzt; am Rest der App
+ * aendert sich dann nichts.
+ */
+
+:root {
+  /* Flaechen */
+  --bg: #0b0f1a;
+  --bg-deep: #060911;
+  --surface: rgb(255 255 255 / 4%);
+  --surface-strong: rgb(255 255 255 / 7%);
+  --surface-sunken: rgb(0 0 0 / 25%);
+  --border: rgb(255 255 255 / 10%);
+  --border-strong: rgb(255 255 255 / 18%);
+
+  /* Text */
+  --text: #eaf0ff;
+  --text-muted: #9aa7c2;
+  --text-faint: #6b7794;
+
+  /* Akzent */
+  --accent: #5eead4;
+  --accent-2: #7c8cff;
+  --accent-3: #f472b6;
+  --accent-ink: #04121a;
+  --accent-soft: rgb(94 234 212 / 14%);
+
+  /* Signale */
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #fb7185;
+
+  /* Effekte */
+  --glow: 0 0 0 1px rgb(94 234 212 / 25%), 0 8px 32px rgb(94 234 212 / 18%);
+  --glow-strong: 0 0 0 1px rgb(94 234 212 / 45%), 0 12px 44px rgb(94 234 212 / 32%);
+  --shadow: 0 16px 48px rgb(0 0 0 / 45%);
+  --blur: 18px;
+
+  /* Form */
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-pill: 999px;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
