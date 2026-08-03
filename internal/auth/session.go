@@ -27,11 +27,14 @@ var (
 	ErrSessionExpired = errors.New("Session abgelaufen")
 )
 
-// Session ist der Inhalt des Cookies. Mehr als Subject und Anzeigename
-// braucht drop nicht — es gibt keine Rollen und keine Persistenz.
+// Session ist der Inhalt des Cookies. Mehr als Subject, Anzeigename und die
+// Adresse des Profilbilds braucht drop nicht — es gibt keine Rollen und keine
+// Persistenz. Die Bildadresse steht hier, weil es sonst nirgends einen Ort
+// gäbe, sie zwischen Login und Abruf zu halten.
 type Session struct {
 	Subject string `json:"sub"`
 	Name    string `json:"name,omitempty"`
+	Picture string `json:"pic,omitempty"`
 	Expires int64  `json:"exp"`
 }
 

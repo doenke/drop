@@ -19,6 +19,8 @@
   const el = {
     conn: document.getElementById('conn'),
     account: document.getElementById('account'),
+    accountName: document.getElementById('account-name'),
+    avatar: document.getElementById('avatar'),
     landing: document.getElementById('view-landing'),
     room: document.getElementById('view-room'),
     createBox: document.getElementById('create-box'),
@@ -595,6 +597,9 @@
     send({ type: 'join', code });
   });
 
+  el.avatar.addEventListener('load', () => { el.avatar.hidden = false; });
+  el.avatar.addEventListener('error', () => { el.avatar.hidden = true; });
+
   el.qr.addEventListener('error', () => {
     el.qr.hidden = true;
     el.qrFallback.hidden = false;
@@ -699,7 +704,13 @@
       el.loginBox.hidden = me.authenticated;
       if (me.authenticated && me.name) {
         el.account.hidden = false;
-        el.account.textContent = me.name;
+        el.accountName.textContent = me.name;
+      }
+      // Das Bild kommt über den eigenen Proxy; ohne Bild bleibt die Stelle
+      // einfach leer, es gibt keinen Ersatz.
+      if (me.authenticated && me.avatar) {
+        el.avatar.alt = me.name ? `Profilbild von ${me.name}` : 'Profilbild';
+        el.avatar.src = '/api/avatar';
       }
     } catch {
       el.createBox.hidden = true;

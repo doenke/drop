@@ -114,7 +114,23 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
 
 @keyframes pulse { 50% { opacity: 0.35; } }
 
-.account { font-size: 0.85rem; color: var(--muted); }
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Kommt kein Profilbild, bleibt das img ausgeblendet — es gibt bewusst
+   keinen Platzhalter, der die Zeile trotzdem füllt. */
+.avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
 
 /* Umschalter fuer das Farbschema, gleiche Formsprache wie im zentralen Theme */
 .theme-toggle {

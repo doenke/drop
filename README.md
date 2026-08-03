@@ -42,6 +42,12 @@ Einen Client anlegen und als Redirect-URI genau
 Authorization Code mit PKCE; bei einem öffentlichen Client bleibt
 `DROP_OIDC_CLIENT_SECRET` leer.
 
+Liefert der `picture`-Claim ein Profilbild, zeigt drop es in der Kopfzeile —
+geholt über den eigenen Server, nicht direkt vom Browser. Der Provider erfährt
+so nicht, wann jemand drop benutzt. Weil die Bildadresse aus einem Token
+stammt, lädt der Server nur von erlaubten Hosts: standardmäßig nur vom Issuer,
+weitere über `DROP_AVATAR_HOSTS`. Ohne Bild bleibt die Stelle leer.
+
 ### Nginx Proxy Manager
 
 Proxy Host auf den Container, dazu:
@@ -63,6 +69,7 @@ kappt.
 | `/ws` | WebSocket: Räume anlegen, beitreten, alle Inhalte |
 | `/auth/login`, `/auth/callback`, `/auth/logout` | OIDC |
 | `/api/me` | Anmeldestatus fürs Frontend |
+| `/api/avatar` | Profilbild der eigenen Session, über den Server geholt |
 | `/api/qr?token=…` | QR-Code des Raum-Links als PNG |
 | `/healthz` | Liveness |
 
