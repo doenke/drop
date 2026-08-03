@@ -14,6 +14,9 @@ import (
 
 	"github.com/doenke/drop/internal/auth"
 	"github.com/doenke/drop/internal/config"
+	"github.com/doenke/drop/internal/httpx"
+	"github.com/doenke/drop/internal/room"
+	"github.com/doenke/drop/internal/ws"
 )
 
 func main() {
@@ -45,11 +48,31 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
+	hub := room.NewHub(room.Options{
+		EmptyGrace: cfg.RoomEmptyGrace,
+		MaxAge:     cfg.RoomMaxAge,
+		MaxMembers: cfg.RoomMaxMembers,
+	})
+	limiter := httpx.NewLimiter(cfg.JoinRatePerMinute, cfg.JoinRateBurst)
+
+	done := make(chan struct{})
+	defer close(done)
+	go hub.Run(done)
+	go limiter.Run(done)
+
+	wsHandler := ws.New(hub, signer, limiter, ws.Limits{
+		MaxFileSize:     cfg.MaxFileSize,
+		MaxChunkSize:    cfg.MaxChunkSize,
+		MaxTextItemSize: cfg.MaxTextItemSize,
+		MaxLiveTextSize: cfg.MaxLiveTextSize,
+	}, cfg.PublicURL.Host, cfg.RoomURL, cfg.TrustProxy, log)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
+	mux.Handle("GET /ws", wsHandler)
 	oidcAuth.Mount(mux)
 	mux.HandleFunc("GET /api/me", signer.MeHandler)
 	mountStatic(mux)
