@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0f1a">
+<title>drop</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="glow-field" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">drop</span>
+  </a>
+  <div class="topbar-right">
+    <span id="conn" class="conn" data-state="offline" title="Verbindung">
+      <span class="conn-dot" aria-hidden="true"></span>
+      <span class="conn-label">getrennt</span>
+    </span>
+    <span id="account" class="account" hidden></span>
+  </div>
+</header>
+
+<main>
+  <!-- Startseite: Raum anlegen oder beitreten -->
+  <section id="view-landing" class="view" hidden>
+    <div class="stack">
+      <div class="card card-hero">
+        <h1>Schnell rübergeschoben.</h1>
+        <p class="lede">
+          Text, Links, Passwörter und Dateien zwischen deinen Geräten — ohne
+          Umweg über Messenger oder Mail. Nichts wird gespeichert.
+        </p>
+        <div id="create-box" class="hero-actions" hidden>
+          <button id="btn-create" class="btn btn-primary btn-lg" type="button">Raum erstellen</button>
+          <p class="hint">Der Raum verschwindet, sobald ihn alle verlassen haben.</p>
+        </div>
+        <div id="login-box" class="hero-actions" hidden>
+          <a id="btn-login" class="btn btn-primary btn-lg" href="/auth/login">Anmelden</a>
+          <p class="hint">Zum Erstellen eines Raums brauchst du einen Login. Beitreten geht ohne.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Einem Raum beitreten</h2>
+        <p class="hint">Scanne den QR-Code oder tippe die drei Wörter ein.</p>
+        <form id="join-form" class="join-form" autocomplete="off">
+          <input id="join-code" class="input input-code" type="text" name="code"
+                 placeholder="apfel tanne kerze" spellcheck="false"
+                 autocapitalize="none" autocorrect="off" aria-label="Beitrittscode">
+          <button class="btn btn-primary" type="submit">Beitreten</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Raumansicht -->
+  <section id="view-room" class="view" hidden>
+    <div class="room-grid">
+      <div class="card card-invite">
+        <div class="invite-qr">
+          <img id="qr" alt="QR-Code zum Beitreten" width="220" height="220">
+        </div>
+        <div class="invite-body">
+          <h2>Zweites Gerät dazuholen</h2>
+          <p class="hint">QR scannen — oder die drei Wörter auf <code>/</code> eintippen.</p>
+          <p id="room-code" class="room-code">···</p>
+          <div class="invite-actions">
+            <button id="btn-copy-link" class="btn" type="button">Link kopieren</button>
+            <button id="btn-copy-code" class="btn" type="button">Code kopieren</button>
+            <button id="btn-leave" class="btn btn-quiet" type="button">Raum verlassen</button>
+          </div>
+          <p id="members" class="members">1 Gerät verbunden</p>
+        </div>
+      </div>
+
+      <div class="card card-live">
+        <div class="card-head">
+          <h2>Live-Textbox</h2>
+          <span id="live-state" class="badge">bereit</span>
+        </div>
+        <p class="hint">Was hier steht, sehen alle im Raum sofort. Landet nicht im Verlauf.</p>
+        <textarea id="live-text" class="live-text" spellcheck="false"
+                  placeholder="Tippen oder einfügen — erscheint direkt auf dem anderen Gerät."
+                  aria-label="Live-Textbox"></textarea>
+      </div>
+
+      <div class="card card-feed">
+        <div class="card-head">
+          <h2>Übertragungen</h2>
+          <div class="feed-actions">
+            <button id="btn-paste" class="btn" type="button">Einfügen</button>
+            <button id="btn-file" class="btn btn-primary" type="button">Datei senden</button>
+            <input id="file-input" type="file" multiple hidden>
+          </div>
+        </div>
+        <p class="hint">Ziehe Dateien irgendwo auf das Fenster, oder drücke Strg/Cmd&nbsp;+&nbsp;V.</p>
+        <ul id="feed" class="feed"></ul>
+        <p id="feed-empty" class="feed-empty">Noch nichts übertragen.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="dropzone" class="dropzone" hidden>
+  <div class="dropzone-inner">Loslassen zum Senden</div>
+</div>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p class="noscript">drop braucht JavaScript — die Übertragung läuft komplett über eine WebSocket-Verbindung.</p>
+</noscript>
+</body>
+</html>
