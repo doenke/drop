@@ -23,6 +23,11 @@ type Config struct {
 	OIDCClientSecret string
 	OIDCScopes       []string
 
+	// AvatarHosts sind die Hosts, von denen der Server Profilbilder holen
+	// darf. Der Issuer steht immer drin; weitere kommen aus
+	// DROP_AVATAR_HOSTS, falls der Provider die Bilder woanders ablegt.
+	AvatarHosts []string
+
 	SessionKey []byte
 	SessionTTL time.Duration
 	// SessionKeyEphemeral ist true, wenn kein DROP_SESSION_KEY gesetzt war
@@ -82,6 +87,11 @@ func Load() (*Config, error) {
 	if c.OIDCIssuer == "" || c.OIDCClientID == "" {
 		return nil, errors.New("DROP_OIDC_ISSUER und DROP_OIDC_CLIENT_ID müssen gesetzt sein")
 	}
+	issuerURL, err := url.Parse(c.OIDCIssuer)
+	if err != nil || issuerURL.Host == "" {
+		return nil, fmt.Errorf("DROP_OIDC_ISSUER ist keine absolute URL: %q", c.OIDCIssuer)
+	}
+	c.AvatarHosts = append([]string{issuerURL.Host}, splitList(env("DROP_AVATAR_HOSTS", ""))...)
 
 	if key := env("DROP_SESSION_KEY", ""); key != "" {
 		if len(key) < 16 {

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/doenke/drop/internal/auth"
+	"github.com/doenke/drop/internal/avatar"
 	"github.com/doenke/drop/internal/config"
 	"github.com/doenke/drop/internal/httpx"
 	"github.com/doenke/drop/internal/qr"
@@ -83,6 +84,7 @@ func run(log *slog.Logger) error {
 	mux.Handle("GET /api/qr", qr.New(hub, qrLimiter, cfg.RoomURL, cfg.TrustProxy))
 	oidcAuth.Mount(mux)
 	mux.HandleFunc("GET /api/me", signer.MeHandler)
+	mux.Handle("GET /api/avatar", avatar.New(signer, cfg.AvatarHosts, log))
 	mountStatic(mux)
 
 	srv := &http.Server{

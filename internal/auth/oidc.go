@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -139,12 +140,17 @@ func (o *OIDC) handleCallback(w http.ResponseWriter, r *http.Request) {
 		Name              string `json:"name"`
 		PreferredUsername string `json:"preferred_username"`
 		Email             string `json:"email"`
+		Picture           string `json:"picture"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
 		o.log.Warn("Claims nicht lesbar", "err", err)
 	}
 
-	sess := Session{Subject: idToken.Subject, Name: displayName(claims.Name, claims.PreferredUsername, claims.Email)}
+	sess := Session{
+		Subject: idToken.Subject,
+		Name:    displayName(claims.Name, claims.PreferredUsername, claims.Email),
+		Picture: pictureURL(claims.Picture),
+	}
 	if err := o.signer.Issue(w, sess); err != nil {
 		http.Error(w, "Session konnte nicht gesetzt werden", http.StatusInternalServerError)
 		return
@@ -216,10 +222,14 @@ func (s *Signer) MeHandler(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		Authenticated bool   `json:"authenticated"`
 		Name          string `json:"name,omitempty"`
+		Avatar        bool   `json:"avatar"`
 	}{}
 	if sess, err := s.Read(r); err == nil {
 		resp.Authenticated = true
 		resp.Name = sess.Name
+		// Die Adresse selbst bleibt im Cookie; das Frontend holt das Bild
+		// über den eigenen Proxy und erfährt nie, wo es liegt.
+		resp.Avatar = sess.Picture != ""
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
@@ -233,6 +243,22 @@ func safeNext(next string) string {
 		return ""
 	}
 	return next
+}
+
+// pictureURL nimmt den picture-Claim nur an, wenn er eine absolute http(s)-URL
+// ist. Ob der Host abgerufen werden darf, entscheidet später der Proxy — hier
+// wird nur aussortiert, was gar keine Bildadresse sein kann (data:, javascript:,
+// relative Pfade).
+func pictureURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || len(raw) > 2048 {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") {
+		return ""
+	}
+	return u.String()
 }
 
 func displayName(candidates ...string) string {
