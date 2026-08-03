@@ -55,11 +55,17 @@ func run(log *slog.Logger) error {
 		MaxMembers: cfg.RoomMaxMembers,
 	})
 	limiter := httpx.NewLimiter(cfg.JoinRatePerMinute, cfg.JoinRateBurst)
+	// Der QR-Endpoint bekommt ein eigenes, großzügigeres Budget. Er braucht
+	// einen gültigen Token, den der Aufrufer ohnehin schon hat, und darf
+	// deshalb nicht mit den Beitrittsversuchen um dieselben Tokens
+	// konkurrieren — sonst zeigt ein normaler Reload ein kaputtes Bild.
+	qrLimiter := httpx.NewLimiter(cfg.JoinRatePerMinute*6, cfg.JoinRateBurst*4)
 
 	done := make(chan struct{})
 	defer close(done)
 	go hub.Run(done)
 	go limiter.Run(done)
+	go qrLimiter.Run(done)
 
 	wsHandler := ws.New(hub, signer, limiter, ws.Limits{
 		MaxFileSize:     cfg.MaxFileSize,
@@ -74,7 +80,7 @@ func run(log *slog.Logger) error {
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	mux.Handle("GET /ws", wsHandler)
-	mux.Handle("GET /api/qr", qr.New(hub, limiter, cfg.RoomURL, cfg.TrustProxy))
+	mux.Handle("GET /api/qr", qr.New(hub, qrLimiter, cfg.RoomURL, cfg.TrustProxy))
 	oidcAuth.Mount(mux)
 	mux.HandleFunc("GET /api/me", signer.MeHandler)
 	mountStatic(mux)

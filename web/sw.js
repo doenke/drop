@@ -6,7 +6,7 @@
  * nichts von /ws, /api oder /auth angefasst.
  */
 
-const VERSION = 'drop-v1';
+const VERSION = 'drop-v2';
 const SHELL = [
   '/',
   '/static/app.js',

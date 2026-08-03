@@ -3,14 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0b0f1a">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
 <title>drop</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/static/theme.css">
 <link rel="stylesheet" href="/static/style.css">
+<script>
+  // Ein gespeichertes Farbschema muss vor dem ersten Rendern stehen, sonst
+  // blitzt kurz das Schema des Betriebssystems auf.
+  try {
+    var stored = localStorage.getItem('drop-theme');
+    if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
+  } catch (e) { /* privater Modus ohne localStorage */ }
+</script>
 <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -27,6 +36,8 @@
       <span class="conn-label">getrennt</span>
     </span>
     <span id="account" class="account" hidden></span>
+    <button id="theme-toggle" class="theme-toggle" type="button"
+            aria-label="Farbschema umschalten">Farbschema</button>
   </div>
 </header>
 
@@ -69,6 +80,9 @@
       <div class="card card-invite">
         <div class="invite-qr">
           <img id="qr" alt="QR-Code zum Beitreten" width="220" height="220">
+          <p id="qr-fallback" class="qr-fallback" hidden>
+            QR-Code nicht verfügbar — nutze die drei Wörter.
+          </p>
         </div>
         <div class="invite-body">
           <h2>Zweites Gerät dazuholen</h2>
