@@ -96,6 +96,9 @@ func run(log *slog.Logger) error {
 	if cfg.SessionKeyEphemeral {
 		log.Warn("DROP_SESSION_KEY nicht gesetzt — Schlüssel zur Laufzeit erzeugt, Sessions überleben keinen Neustart")
 	}
+	if err := applyBranding(cfg); err != nil {
+		return fmt.Errorf("Branding anwenden: %w", err)
+	}
 
 	signer := auth.NewSigner(cfg.SessionKey, cfg.SessionTTL, cfg.CookieSecure())
 

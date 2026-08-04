@@ -18,6 +18,14 @@ type Config struct {
 	Addr      string
 	PublicURL *url.URL
 
+	// Title erscheint im Browser-Tab, in der Kopfzeile und als Name der
+	// installierten PWA. Ohne DROP_TITLE bleibt es beim bisherigen "drop".
+	Title string
+	// HeaderLogoURL ist ein optionales, vom Betreiber gestelltes Logo ganz
+	// links in der Kopfzeile — für ein eigenes Branding neben dem
+	// eingebauten drop-Icon. Leer bedeutet: kein Logo.
+	HeaderLogoURL string
+
 	OIDCIssuer       string
 	OIDCClientID     string
 	OIDCClientSecret string
@@ -56,6 +64,7 @@ type Config struct {
 func Load() (*Config, error) {
 	c := &Config{
 		Addr:              env("DROP_ADDR", ":8080"),
+		Title:             strings.TrimSpace(env("DROP_TITLE", "drop")),
 		OIDCIssuer:        strings.TrimSuffix(env("DROP_OIDC_ISSUER", ""), "/"),
 		OIDCClientID:      env("DROP_OIDC_CLIENT_ID", ""),
 		OIDCClientSecret:  env("DROP_OIDC_CLIENT_SECRET", ""),
@@ -83,6 +92,17 @@ func Load() (*Config, error) {
 	}
 	u.Path = strings.TrimSuffix(u.Path, "/")
 	c.PublicURL = u
+
+	if c.Title == "" {
+		c.Title = "drop"
+	}
+	if raw := strings.TrimSpace(env("DROP_HEADER_LOGO_URL", "")); raw != "" {
+		logoURL, err := url.Parse(raw)
+		if err != nil || logoURL.Host == "" || (logoURL.Scheme != "https" && logoURL.Scheme != "http") {
+			return nil, fmt.Errorf("DROP_HEADER_LOGO_URL ist keine absolute http(s)-URL: %q", raw)
+		}
+		c.HeaderLogoURL = logoURL.String()
+	}
 
 	if c.OIDCIssuer == "" || c.OIDCClientID == "" {
 		return nil, errors.New("DROP_OIDC_ISSUER und DROP_OIDC_CLIENT_ID müssen gesetzt sein")

@@ -129,6 +129,8 @@ Für den normalen Betrieb brauchst du nur wenige Werte:
 | `DROP_OIDC_ISSUER` / `DROP_OIDC_CLIENT_ID` | Pflicht. Der Identity-Provider für den Login der Raum-Ersteller. |
 | `DROP_SESSION_KEY` | Schlüssel für das signierte Session-Cookie. Fehlt er, erzeugt drop beim Start einen — dann sind nach jedem Neustart alle Anmeldungen weg. |
 | `DROP_TRUSTED_PROXY` | `true`, wenn ein Reverse Proxy davor steht und `X-Forwarded-For` die echte Client-IP trägt. |
+| `DROP_TITLE` | Name der Instanz in Tab, Kopfzeile, installierter PWA und Footer. Vorgabe: `drop`. |
+| `DROP_HEADER_LOGO_URL` | Eigenes Logo ganz links in der Kopfzeile, vor dem drop-Icon. Vorgabe: kein Logo. |
 
 Alle Werte inklusive Transfer-Limits, Raum-Lebensdauer und Rate-Limit
 stehen ausführlich kommentiert in [.env.example](.env.example).
@@ -153,6 +155,13 @@ sein, weil drop die OIDC-Discovery sofort durchführt.
 Die Farben stehen ausschließlich in [`web/theme.css`](web/theme.css) als
 CSS-Custom-Properties. `web/style.css` greift nur über `var()` darauf zu
 — ein neues Farbschema zieht also an genau einer Stelle ein.
+
+[`web/icons/icon.svg`](web/icons/icon.svg) ist die einzige Quelle für
+Favicon, PWA-Icons und das Icon in der Kopfzeile — alle drei zeigen
+dasselbe Bild. `index.html` und `manifest.json` sind Go-Templates: der
+Server setzt `DROP_TITLE` (Tab-Titel, Kopfzeile, PWA-Name, Footer) und
+`DROP_HEADER_LOGO_URL` einmal beim Start ein (`applyBranding` in
+[`static.go`](static.go)).
 
 ---
 
