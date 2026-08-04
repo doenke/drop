@@ -1,79 +1,144 @@
-# drop
+# drop 📤✨
 
-Ephemeres, selbst gehostetes Tool, um Text, Links, Passwörter und Dateien
-schnell zwischen Geräten zu schieben — vor allem Handy ↔ Rechner. Ein Binary,
-ein Port, nichts wird gespeichert.
+drop ist deine schnelle Ablage zwischen Geräten: ein Ort, um Text, Links,
+Passwörter und Dateien vom Rechner aufs Handy zu schieben und zurück, ohne
+Umweg über Messenger, Mail oder Cloud-Speicher. Kein Konto fürs Gegenüber,
+kein Verlauf, nichts wird gespeichert — sobald der letzte Teilnehmer geht,
+ist der Raum weg.
 
-Ein angemeldeter Nutzer erstellt einen **Raum**. Andere treten per **QR-Code**
-oder **drei deutschen Wörtern** bei, ohne Login. Im Raum gibt es eine
-**Live-Textbox** (einer tippt, alle sehen es sofort) und einen
-**Transfer-Feed** für Text-Snippets und Dateien. Installierbar als PWA.
+Kurz gesagt: kein Sich-selbst-eine-Mail-schreiben mehr, kein Screenshot in
+drei Messengern verteilt, sondern ein Link oder drei Wörter, und die Datei
+ist drüben.
 
-Die vollständige Spezifikation steht in [SPEC.md](SPEC.md).
+![Startseite von drop: Raum erstellen oder per drei Wörtern beitreten](docs/screenshot-start.png)
 
-## Wie es funktioniert
+## Was drop für dich macht
 
-- Alles läuft über **eine WebSocket-Verbindung**; der Server relayt zwischen
-  den Mitgliedern. Kein WebRTC, kein TURN, kein E2E — Server-Vertrauen genügt,
-  weil es die eigene Infrastruktur ist.
-- **Räume leben nur im RAM.** Keine Datenbank, kein Volume. Ein leerer Raum
-  wird nach kurzer Grace-Time weggeräumt; Token und Wörter-Code sind dann
-  sofort wieder frei.
-- **Dateien werden durchgereicht, nicht abgelegt.** Chunks gehen als
-  Binärframes rein und unverändert wieder raus.
-- Frontend, Wortliste, Icons, Manifest und Service Worker stecken per
-  `embed.FS` im Binary.
+- **Räume in Sekunden öffnen** – anmelden, „Raum erstellen“, fertig.
+- **Ohne Login beitreten** – ein QR-Code oder drei deutsche Wörter reichen
+  dem zweiten Gerät.
+- **Live mittippen** – eine gemeinsame Textbox, in der alle sofort sehen,
+  was reinkommt. Ideal für einen Link oder ein Einmalpasswort.
+- **Dateien durchreichen** – Datei-Button, Drag&Drop oder einfach
+  Strg/Cmd+V für einen Screenshot.
+- **Bei Empfang gleich weiterverwenden** – Text kopieren, Bilder kopieren
+  oder herunterladen, alles andere herunterladen.
+- **Als App installieren** – drop ist eine PWA und lässt sich auf dem
+  Homescreen ablegen.
+- **Hell oder dunkel** – folgt deinem System oder lässt sich manuell
+  umschalten.
 
-## Betrieb
+## Für wen ist das?
 
-```sh
-cp .env.example .env      # Werte eintragen, mindestens DROP_PUBLIC_URL,
-                          # DROP_OIDC_* und DROP_SESSION_KEY
-cp compose.example.yml compose.yml
+drop passt zu dir, wenn du ...
+
+- ständig Links oder Passwörter zwischen Rechner und Handy hin- und
+  herschickst,
+- Screenshots nicht extra an dich selbst mailen willst,
+- kurz jemandem ohne Account eine Datei zuschieben musst,
+- selbst hostest und weißt, wo deine Daten liegen — hier: nirgends, denn es
+  wird nichts gespeichert.
+
+## Schnellstart mit Docker
+
+```bash
+cp .env.example .env
+```
+
+Trag mindestens `DROP_PUBLIC_URL`, `DROP_OIDC_ISSUER`, `DROP_OIDC_CLIENT_ID`
+und einen `DROP_SESSION_KEY` ein (siehe unten, „Login per OIDC“).
+
+```yaml
+services:
+  drop:
+    build: https://github.com/doenke/drop.git#main
+    image: drop-drop:latest
+    container_name: drop
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+```
+
+```bash
 docker compose up -d --build
 ```
 
-Alle Einstellungen sind in [.env.example](.env.example) dokumentiert.
+Danach öffnest du `http://localhost:8080`. Ein Raum lässt sich erst nach
+dem Login erstellen — Beitreten per Code funktioniert immer, ganz ohne
+Konto.
 
-### Pocket ID
+## Ein erster Rundgang
 
-Einen Client anlegen und als Redirect-URI genau
-`${DROP_PUBLIC_URL}/auth/callback` eintragen. Der Login läuft als
-Authorization Code mit PKCE; bei einem öffentlichen Client bleibt
-`DROP_OIDC_CLIENT_SECRET` leer.
+### 1. Raum erstellen
 
-Liefert der `picture`-Claim ein Profilbild, zeigt drop es in der Kopfzeile —
-geholt über den eigenen Server, nicht direkt vom Browser. Der Provider erfährt
-so nicht, wann jemand drop benutzt. Weil die Bildadresse aus einem Token
-stammt, lädt der Server nur von erlaubten Hosts: standardmäßig nur vom Issuer,
-weitere über `DROP_AVATAR_HOSTS`. Ohne Bild bleibt die Stelle leer.
+Anmelden, „Raum erstellen“ klicken — fertig. drop vergibt einen langen
+Zufallstoken für den QR-Code und einen kurzen 3-Wörter-Code als
+tippbaren Fallback.
 
-### Nginx Proxy Manager
+### 2. Zweites Gerät dazuholen
 
-Proxy Host auf den Container, dazu:
+QR-Code scannen oder die drei Wörter eintippen. Kein Konto nötig, kein
+zusätzlicher Schritt — der Link führt direkt in den Raum.
 
-- **Websockets Support** aktivieren — ohne das kommt keine Verbindung zustande.
-- **Force SSL** aktivieren, damit das Session-Cookie mit `Secure` zurückkommt.
-- `DROP_TRUSTED_PROXY=true` setzen, damit das Rate-Limit die echte Client-IP
-  aus `X-Forwarded-For` benutzt statt der Proxy-Adresse.
+![Offener Raum: QR-Code, Live-Textbox und Transfer-Feed mit Text und Bild](docs/screenshot-raum.png)
 
-Der Server pingt alle 25 Sekunden, damit der Proxy stille Verbindungen nicht
-kappt.
+### 3. Live tippen oder senden
 
-## Endpunkte
+Die Live-Textbox ist für schnelle Links und Passwörter gedacht — einer
+tippt, alle sehen es sofort, und es landet nicht im Verlauf. Für Dateien
+und größere Text-Snippets gibt es den Transfer-Feed: Datei-Button,
+Drag&Drop oder Einfügen per Strg/Cmd+V.
 
-| Pfad | Zweck |
+### 4. Empfangen und weiterverwenden
+
+Jedes Item im Feed hat passende Aktionen: Text kopieren, Bilder kopieren
+oder herunterladen, alle anderen Dateien herunterladen. Sobald der letzte
+Teilnehmer den Raum verlässt, ist alles weg.
+
+## Login per OIDC
+
+drop meldet Ersteller über OIDC an (Authorization Code + PKCE), zum
+Beispiel gegen [Pocket ID](https://github.com/pocket-id/pocket-id). Dafür
+brauchst du:
+
+- `DROP_OIDC_ISSUER`
+- `DROP_OIDC_CLIENT_ID`
+
+`DROP_OIDC_CLIENT_SECRET` bleibt bei einem öffentlichen Client leer. Beim
+Provider als Redirect-URI genau `${DROP_PUBLIC_URL}/auth/callback`
+eintragen.
+
+Liefert der `picture`-Claim ein Profilbild, zeigt drop es in der
+Kopfzeile — geholt über den eigenen Server, nicht direkt vom Browser. Der
+Provider erfährt so nicht, wann jemand drop benutzt. Weil die Bildadresse
+aus einem Token stammt, lädt der Server nur von erlaubten Hosts:
+standardmäßig nur vom Issuer, weitere über `DROP_AVATAR_HOSTS`. Ohne Bild
+bleibt die Stelle einfach leer.
+
+Beitreten per QR-Code oder 3-Wörter-Code braucht **kein** Konto — das ist
+für das zweite Gerät gedacht, das nur kurz mitmachen soll.
+
+## Kleine Konfiguration, großer Nutzen
+
+Für den normalen Betrieb brauchst du nur wenige Werte:
+
+| Einstellung | Wofür? |
 | --- | --- |
-| `/` | App-Shell |
-| `/r/{token}` | dieselbe Shell, tritt direkt dem Raum bei (Ziel des QR-Codes) |
-| `/ws` | WebSocket: Räume anlegen, beitreten, alle Inhalte |
-| `/auth/login`, `/auth/callback`, `/auth/logout` | OIDC |
-| `/api/me` | Anmeldestatus fürs Frontend |
-| `/api/avatar` | Profilbild der eigenen Session, über den Server geholt |
-| `/api/qr?token=…` | QR-Code des Raum-Links als PNG |
-| `/healthz` | Liveness |
+| `DROP_PUBLIC_URL` | Pflicht. Öffentliche Adresse, aus der Redirect-URI, Raum-Links und der erlaubte WebSocket-Origin gebildet werden. |
+| `DROP_OIDC_ISSUER` / `DROP_OIDC_CLIENT_ID` | Pflicht. Der Identity-Provider für den Login der Raum-Ersteller. |
+| `DROP_SESSION_KEY` | Schlüssel für das signierte Session-Cookie. Fehlt er, erzeugt drop beim Start einen — dann sind nach jedem Neustart alle Anmeldungen weg. |
+| `DROP_TRUSTED_PROXY` | `true`, wenn ein Reverse Proxy davor steht und `X-Forwarded-For` die echte Client-IP trägt. |
 
-## Entwicklung
+Alle Werte inklusive Transfer-Limits, Raum-Lebensdauer und Rate-Limit
+stehen ausführlich kommentiert in [.env.example](.env.example).
+
+## Für Entwicklerinnen und Entwickler
+
+drop ist ein einziges Go-Binary. Frontend, Wortliste, Icons, Manifest und
+Service Worker stecken per `embed.FS` mit drin — es gibt keine Dateien
+daneben, keine Datenbank, kein Volume. Räume leben ausschließlich im RAM
+und werden nach kurzer Leerlaufzeit automatisch aufgeräumt.
 
 ```sh
 go build ./...
@@ -82,12 +147,92 @@ go test ./...            # Unit-Tests plus WebSocket-Integrationstest
 ```
 
 Zum lokalen Start werden `DROP_PUBLIC_URL`, `DROP_OIDC_ISSUER` und
-`DROP_OIDC_CLIENT_ID` gebraucht; der Issuer muss beim Start erreichbar sein,
-weil drop die OIDC-Discovery sofort durchführt.
+`DROP_OIDC_CLIENT_ID` gebraucht; der Issuer muss beim Start erreichbar
+sein, weil drop die OIDC-Discovery sofort durchführt.
 
 Die Farben stehen ausschließlich in [`web/theme.css`](web/theme.css) als
-Custom Properties. `web/style.css` greift nur über `var()` darauf zu — ein
-neues Basis-CSS zieht also an genau einer Stelle ein.
+CSS-Custom-Properties. `web/style.css` greift nur über `var()` darauf zu
+— ein neues Farbschema zieht also an genau einer Stelle ein.
+
+---
+
+## Technische Doku
+
+Dieser Abschnitt ist für alle gedacht, die drop dauerhaft betreiben,
+automatisieren oder in eine bestehende Homelab-/Server-Umgebung einbauen
+möchten.
+
+### Vollständige `docker-compose.yml`
+
+```yaml
+services:
+  drop:
+    build: https://github.com/doenke/drop.git#main
+    image: drop-drop:latest
+    container_name: drop
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    networks:
+      - bridge-net
+    healthcheck:
+      # Das Image ist distroless und hat weder Shell noch curl; das Binary
+      # prüft sich deshalb selbst per -healthcheck-Flag gegen /healthz.
+      test: ["CMD", "/drop", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  bridge-net:
+    external: true
+```
+
+Ein Volume ist absichtlich nicht dabei — drop persistiert nichts. Die
+vollständig kommentierte Vorlage liegt unter
+[compose.example.yml](compose.example.yml).
+
+### Reverse Proxy (z. B. Nginx Proxy Manager)
+
+Proxy Host auf den Container, dazu:
+
+- **Websockets Support** aktivieren — ohne das kommt keine Verbindung
+  zustande.
+- **Force SSL** aktivieren, damit das Session-Cookie mit `Secure`
+  zurückkommt.
+- `DROP_TRUSTED_PROXY=true` setzen, damit das Rate-Limit die echte
+  Client-IP aus `X-Forwarded-For` benutzt statt der Proxy-Adresse.
+
+Der Server pingt alle 25 Sekunden, damit ein Proxy stille Verbindungen
+nicht kappt.
+
+### Wichtige Hinweise zum Betrieb
+
+- `DROP_SESSION_KEY` sollte gesetzt sein und mindestens 16 Zeichen lang
+  sein, sonst erzeugt drop beim Start einen zufälligen Schlüssel und alle
+  Sessions gehen bei jedem Neustart verloren.
+- Räume gelten nur für den einzelnen Container — drop hält seinen
+  Zustand ausschließlich im Prozessspeicher und ist nicht für mehrere
+  Replicas hinter demselben Balancer ausgelegt.
+- Der 3-Wörter-Code hat bewusst wenig Entropie; `DROP_JOIN_RATE_PER_MINUTE`
+  und `DROP_JOIN_RATE_BURST` begrenzen Durchprobier-Versuche pro IP.
+- `DROP_AVATAR_HOSTS` ist der SSRF-Schutz des Profilbild-Proxys — je
+  kürzer die Liste, desto besser.
+
+### Endpunkte
+
+| Endpunkt | Zweck |
+| --- | --- |
+| `GET /` | App-Shell |
+| `GET /r/{token}` | dieselbe Shell, tritt direkt dem Raum bei (Ziel des QR-Codes) |
+| `GET /ws` | WebSocket: Räume anlegen, beitreten, alle Inhalte |
+| `GET /auth/login`, `/auth/callback` · `POST /auth/logout` | OIDC |
+| `GET /api/me` | Anmeldestatus fürs Frontend |
+| `GET /api/avatar` | Profilbild der eigenen Session, über den Server geholt |
+| `GET /api/qr?token=…` | QR-Code des Raum-Links als PNG |
+| `GET /healthz` | Liveness, auch Ziel des `-healthcheck`-Selbsttests |
 
 ## Lizenz
 
