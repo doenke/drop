@@ -45,7 +45,6 @@
     feedEmpty: document.getElementById('feed-empty'),
     dropzone: document.getElementById('dropzone'),
     toasts: document.getElementById('toasts'),
-    themeToggle: document.getElementById('theme-toggle'),
   };
 
   const state = {
@@ -672,42 +671,6 @@
     if (text && text.trim()) sendTextItem(text);
   });
 
-  /* ----------------------------------------------------------- Farbschema */
-
-  // Ohne Override folgt drop dem Betriebssystem, wie der Rest der
-  // Kanonenwiese. Der Umschalter setzt data-theme auf der Wurzel — dieselbe
-  // Mechanik, die das zentrale Theme vorgibt.
-  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-  function effectiveTheme() {
-    return document.documentElement.dataset.theme
-      || (darkQuery.matches ? 'dark' : 'light');
-  }
-
-  function applyTheme(theme) {
-    if (theme) {
-      document.documentElement.dataset.theme = theme;
-      try { localStorage.setItem('drop-theme', theme); } catch { /* egal */ }
-    }
-    const dark = effectiveTheme() === 'dark';
-    el.themeToggle.textContent = dark ? I18N.t('theme_light') : I18N.t('theme_dark');
-    el.themeToggle.title = dark ? I18N.t('theme_toggle_title_to_light') : I18N.t('theme_toggle_title_to_dark');
-    // Die Farbe der Browser-Leiste folgt sonst weiter dem System statt dem
-    // gewählten Schema.
-    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-      if (!document.documentElement.dataset.theme) return;
-      meta.removeAttribute('media');
-      meta.content = dark ? '#0f172a' : '#f6f7f9';
-    });
-  }
-
-  el.themeToggle.addEventListener('click', () => {
-    applyTheme(effectiveTheme() === 'dark' ? 'light' : 'dark');
-  });
-  darkQuery.addEventListener('change', () => {
-    if (!document.documentElement.dataset.theme) applyTheme(null);
-  });
-
   /* ------------------------------------------------------------------ Start */
 
   async function loadAccount() {
@@ -734,7 +697,6 @@
 
   function start() {
     applyI18n();
-    applyTheme(null);
     showLanding();
     updateFeedEmpty();
     loadAccount();

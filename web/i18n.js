@@ -23,7 +23,6 @@
       conn_offline: 'offline',
       conn_connecting: 'connecting…',
       conn_online: 'connected',
-      theme_toggle_aria_label: 'Toggle color scheme',
       qr_alt: 'QR code to join',
       qr_fallback: 'QR code unavailable — use the three words instead.',
       invite_heading: 'Add a second device',
@@ -78,10 +77,6 @@
       meta_from_name: 'from {name}',
       avatar_alt_named: 'Profile picture of {name}',
       avatar_alt: 'Profile picture',
-      theme_light: 'Light',
-      theme_dark: 'Dark',
-      theme_toggle_title_to_light: 'Switch to light',
-      theme_toggle_title_to_dark: 'Switch to dark',
 
       // Übersetzt den WebSocket-Fehlercode aus errorMsg.code — siehe
       // internal/ws/protocol.go für die Bedeutung jedes Codes.
@@ -127,7 +122,6 @@
       conn_offline: 'getrennt',
       conn_connecting: 'verbinde …',
       conn_online: 'verbunden',
-      theme_toggle_aria_label: 'Farbschema umschalten',
       qr_alt: 'QR-Code zum Beitreten',
       qr_fallback: 'QR-Code nicht verfügbar — nutze die drei Wörter.',
       invite_heading: 'Zweites Gerät dazuholen',
@@ -182,10 +176,6 @@
       meta_from_name: 'von {name}',
       avatar_alt_named: 'Profilbild von {name}',
       avatar_alt: 'Profilbild',
-      theme_light: 'Hell',
-      theme_dark: 'Dunkel',
-      theme_toggle_title_to_light: 'Zu hell wechseln',
-      theme_toggle_title_to_dark: 'Zu dunkel wechseln',
 
       errors: {
         'unauthorized': 'Zum Anlegen eines Raums bitte anmelden',

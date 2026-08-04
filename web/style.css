@@ -143,20 +143,6 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
   border: 1px solid var(--border);
 }
 
-/* Umschalter fuer das Farbschema, gleiche Formsprache wie im zentralen Theme */
-.theme-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  padding: 0.3rem 0.8rem;
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  color: var(--text);
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
-}
-.theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
-
 /* Karten */
 
 .view { padding-bottom: 3rem; }
