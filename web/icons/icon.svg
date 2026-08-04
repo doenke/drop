@@ -1,14 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="drop">
+<!-- Quelle: design/drop-icon-transparent.svg (enger Ausschnitt fuer kleine Groessen) -->
+<svg viewBox="96 77 320 320" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="1" stop-color="#0ea5e9"/>
+    <!-- Background depth -->
+    <radialGradient id="bgGrad" cx="50%" cy="44%" r="62%" gradientUnits="objectBoundingBox">
+      <stop offset="0%"  stop-color="#1b2740"/>
+      <stop offset="55%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </radialGradient>
+
+    <!-- Ambient cyan glow behind droplet -->
+    <radialGradient id="ambient" cx="256" cy="262" r="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#38bdf8" stop-opacity="0.48"/>
+      <stop offset="42%" stop-color="#0ea5e9" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Ripple halo -->
+    <radialGradient id="halo" cx="256" cy="384" r="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#38bdf8" stop-opacity="0.28"/>
+      <stop offset="55%" stop-color="#0ea5e9" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Droplet body -->
+    <linearGradient id="dropBody" x1="256" y1="120" x2="256" y2="354" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#7dd3fc"/>
+      <stop offset="26%" stop-color="#38bdf8"/>
+      <stop offset="72%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
     </linearGradient>
+
+    <!-- Lit-from-within inner glow -->
+    <radialGradient id="innerGlow" cx="256" cy="302" r="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#e0f2fe" stop-opacity="0.72"/>
+      <stop offset="42%" stop-color="#7dd3fc" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Glass rim light -->
+    <linearGradient id="rim" x1="256" y1="120" x2="256" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"  stop-color="#f0f9ff" stop-opacity="0.8"/>
+      <stop offset="32%" stop-color="#bae6fd" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Big frosted specular -->
+    <radialGradient id="spec" cx="50%" cy="42%" r="60%" gradientUnits="objectBoundingBox">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <clipPath id="dropClip">
+      <path d="M 256 120 C 308 200 342 232 342 268 A 86 86 0 1 1 170 268 C 170 232 204 200 256 120 Z"/>
+    </clipPath>
+
+    <filter id="fBlurS" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"/></filter>
+    <filter id="fBlurM" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="fBlurL" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>
+    <filter id="fShadow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="13"/></filter>
+    <filter id="fSpec" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="fEdge" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="13"/></filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <g fill="#04121a">
-    <rect x="236" y="98" width="40" height="190" rx="20"/>
-    <path d="M170 248h172L256 358z"/>
-    <rect x="150" y="376" width="212" height="40" rx="20"/>
+
+  <!-- Background -->
+
+  <!-- Ambient glow -->
+  <ellipse cx="256" cy="262" rx="180" ry="180" fill="url(#ambient)" filter="url(#fBlurL)"/>
+
+  <!-- Ripple / landing halo (behind droplet) -->
+  <ellipse cx="256" cy="386" rx="180" ry="52" fill="url(#halo)"/>
+  <g filter="url(#fBlurS)" fill="none">
+    <ellipse cx="256" cy="384" rx="66"  ry="15" stroke="#7dd3fc" stroke-opacity="0.55" stroke-width="3"/>
+    <ellipse cx="256" cy="384" rx="112" ry="26" stroke="#38bdf8" stroke-opacity="0.30" stroke-width="2.4"/>
+    <ellipse cx="256" cy="384" rx="158" ry="38" stroke="#0ea5e9" stroke-opacity="0.15" stroke-width="2"/>
   </g>
+
+  <!-- Contact shadow -->
+  <ellipse cx="256" cy="360" rx="86" ry="24" fill="#04070f" opacity="0.5" filter="url(#fShadow)"/>
+
+  <!-- Soft cyan edge glow hugging the silhouette -->
+  <path d="M 256 120 C 308 200 342 232 342 268 A 86 86 0 1 1 170 268 C 170 232 204 200 256 120 Z" fill="#38bdf8" opacity="0.5" filter="url(#fEdge)"/>
+
+  <!-- Droplet body -->
+  <path d="M 256 120 C 308 200 342 232 342 268 A 86 86 0 1 1 170 268 C 170 232 204 200 256 120 Z" fill="url(#dropBody)"/>
+
+  <!-- Inner glow (clipped) -->
+  <g clip-path="url(#dropClip)">
+    <path d="M 256 120 C 308 200 342 232 342 268 A 86 86 0 1 1 170 268 C 170 232 204 200 256 120 Z" fill="url(#innerGlow)"/>
+    <!-- shaded lower-right for roundness -->
+    <ellipse cx="322" cy="322" rx="70" ry="70" fill="#0369a1" opacity="0.28" filter="url(#fBlurM)"/>
+  </g>
+
+  <!-- Glass rim light -->
+  <path d="M 256 120 C 308 200 342 232 342 268 A 86 86 0 1 1 170 268 C 170 232 204 200 256 120 Z"
+        fill="none" stroke="url(#rim)" stroke-width="2" filter="url(#fBlurS)"/>
+
+  <!-- Frosted specular highlight (top-left) -->
+  <g clip-path="url(#dropClip)">
+    <ellipse cx="220" cy="234" rx="46" ry="64" fill="url(#spec)" transform="rotate(-20 220 234)" filter="url(#fSpec)"/>
+  </g>
+
+  <!-- Sharp glint -->
+  <ellipse cx="230" cy="206" rx="9" ry="17" fill="#ffffff" opacity="0.9" transform="rotate(-22 230 206)" filter="url(#fBlurS)"/>
+  <ellipse cx="258" cy="176" rx="4" ry="7" fill="#ffffff" opacity="0.75" transform="rotate(-22 258 176)"/>
 </svg>

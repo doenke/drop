@@ -78,13 +78,13 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
   letter-spacing: -0.02em;
   font-size: 1.15rem;
 }
-/* Dasselbe Icon wie der Favicon (/icons/icon.svg) — die Rundung bringt die
-   SVG selbst mit, hier bleibt nur Größe und Glow. */
+/* Dasselbe Icon wie der Favicon (/icons/icon.svg). Glow und Glanzlicht
+   bringt die SVG bereits mit — ein zusätzlicher box-shadow würde nur ein
+   rechteckiges Leuchten um die Bildbox legen statt um den Tropfen. */
 .brand-mark {
   display: block;
-  width: 1.35rem;
-  height: 1.35rem;
-  box-shadow: var(--glow);
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 /* Optionales Betreiber-Logo ganz links, vor dem drop-Icon. Ohne
