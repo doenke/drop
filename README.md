@@ -27,6 +27,8 @@ ist drüben.
   oder herunterladen, alles andere herunterladen.
 - **Als App installieren** – drop ist eine PWA und lässt sich auf dem
   Homescreen ablegen.
+- **Auf Englisch oder Deutsch** – die Oberfläche erkennt automatisch die
+  Sprache des Browsers, ganz ohne Umschalter.
 
 ## Für wen ist das?
 

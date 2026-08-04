@@ -273,7 +273,7 @@ func TestTextSyncRejectsOversizedText(t *testing.T) {
 	owner, _ := e.createRoom(t)
 
 	owner.send(map[string]any{"type": msgTextSync, "full": strings.Repeat("x", 5<<10)})
-	if m := owner.expect(msgError); m["code"] != errTooLarge {
+	if m := owner.expect(msgError); m["code"] != errLiveTextTooLarge {
 		t.Fatalf("zu langer Text wurde angenommen: %v", m["code"])
 	}
 }
@@ -360,7 +360,7 @@ func TestFileChunkWithoutMetaIsRejected(t *testing.T) {
 	owner, _ := e.createRoom(t)
 
 	owner.sendBinary(binaryFrame("unbekannt", []byte("daten")))
-	if m := owner.expect(msgError); m["code"] != errBadMessage {
+	if m := owner.expect(msgError); m["code"] != errChunkUnannounced {
 		t.Fatalf("Chunk ohne Ankündigung wurde angenommen: %v", m["code"])
 	}
 }
@@ -378,7 +378,7 @@ func TestFileLargerThanAnnouncedIsAborted(t *testing.T) {
 	guest.expect(msgFileMeta)
 
 	owner.sendBinary(binaryFrame("f1", []byte("viel zu viele Bytes")))
-	if m := owner.expect(msgError); m["code"] != errTooLarge {
+	if m := owner.expect(msgError); m["code"] != errUploadOverflow {
 		t.Fatalf("Überlänge wurde nicht bemerkt: %v", m["code"])
 	}
 	if abort := guest.expect(msgFileAbort); abort["id"] != "f1" {
@@ -391,7 +391,7 @@ func TestOversizedFileIsRefusedUpfront(t *testing.T) {
 	owner, _ := e.createRoom(t)
 
 	owner.send(map[string]any{"type": msgFileMeta, "id": "f1", "name": "gross.bin", "size": 2 << 20})
-	if m := owner.expect(msgError); m["code"] != errTooLarge {
+	if m := owner.expect(msgError); m["code"] != errFileTooLarge {
 		t.Fatalf("zu große Datei wurde angekündigt: %v", m["code"])
 	}
 }
@@ -451,7 +451,7 @@ func TestActionsRequireRoom(t *testing.T) {
 	e := newEnv(t)
 	c := e.dial(t, false)
 	c.send(map[string]any{"type": msgTextSync, "full": "ohne Raum"})
-	if m := c.expect(msgError); m["code"] != errRoomState {
+	if m := c.expect(msgError); m["code"] != errNotInRoom {
 		t.Fatalf("Aktion ohne Raum wurde angenommen: %v", m["code"])
 	}
 }
@@ -460,7 +460,7 @@ func TestUnknownMessageType(t *testing.T) {
 	e := newEnv(t)
 	c := e.dial(t, false)
 	c.send(map[string]any{"type": "gibt-es-nicht"})
-	if m := c.expect(msgError); m["code"] != errBadMessage {
+	if m := c.expect(msgError); m["code"] != errUnknownType {
 		t.Fatalf("unbekannter Typ wurde akzeptiert: %v", m["code"])
 	}
 }

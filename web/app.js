@@ -87,8 +87,22 @@
     setTimeout(() => node.remove(), 4000);
   }
 
+  const TIME_LOCALE = { en: 'en-GB', de: 'de-DE' };
+
   function timestamp() {
-    return new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    return new Date().toLocaleTimeString(TIME_LOCALE[I18N.lang] || 'en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // applyI18n übersetzt alle statischen [data-i18n*]-Knoten. Läuft ganz am
+  // Anfang von start(), bevor die Ansicht aus ihrem hidden-Zustand geholt
+  // wird — dadurch gibt es kein sichtbares Sprachwechsel-Flackern.
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = I18N.t(n.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((n) => { n.placeholder = I18N.t(n.dataset.i18nPlaceholder); });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach((n) => { n.setAttribute('aria-label', I18N.t(n.dataset.i18nAriaLabel)); });
+    document.querySelectorAll('[data-i18n-title]').forEach((n) => { n.title = I18N.t(n.dataset.i18nTitle); });
+    document.querySelectorAll('[data-i18n-alt]').forEach((n) => { n.alt = I18N.t(n.dataset.i18nAlt); });
+    document.documentElement.lang = I18N.lang;
   }
 
   function setConnState(stateName, label) {
@@ -109,14 +123,14 @@
     if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
-    setConnState('connecting', 'verbinde …');
+    setConnState('connecting', I18N.t('conn_connecting'));
     const ws = new WebSocket(socketURL());
     ws.binaryType = 'arraybuffer';
     state.ws = ws;
 
     ws.addEventListener('open', () => {
       state.reconnectDelay = 500;
-      setConnState('online', 'verbunden');
+      setConnState('online', I18N.t('conn_online'));
       // Nach einem Abriss zurueck in denselben Raum — der lebt noch, solange
       // die Grace-Time laeuft.
       if (state.room) {
@@ -141,7 +155,7 @@
     });
 
     ws.addEventListener('close', () => {
-      setConnState('offline', 'getrennt');
+      setConnState('offline', I18N.t('conn_offline'));
       if (state.leaving) return;
       if (!state.room && !state.pending) return;
       state.reconnectTimer = setTimeout(connect, state.reconnectDelay);
@@ -178,12 +192,12 @@
       case 'peer-joined':
         state.members = msg.members;
         updateMembers();
-        toast(`${msg.peer.name} ist dazugekommen`);
+        toast(I18N.t('toast_peer_joined', { name: msg.peer.name }));
         break;
       case 'peer-left':
         state.members = msg.members;
         updateMembers();
-        toast(`${msg.peer.name} hat den Raum verlassen`);
+        toast(I18N.t('toast_peer_left', { name: msg.peer.name }));
         break;
       case 'text-sync': applyRemoteText(msg); break;
       case 'item-text': addTextItem({ content: msg.content, from: msg.from.name, own: false }); break;
@@ -196,7 +210,7 @@
   }
 
   function handleServerError(msg) {
-    toast(msg.message || 'Es ist etwas schiefgegangen', 'error');
+    toast(I18N.errorText(msg.code) || msg.message || I18N.t('toast_error_generic'), 'error');
     if (msg.code === 'room-not-found' || msg.code === 'room-full') {
       leaveRoom({ silent: true });
     }
@@ -252,7 +266,7 @@
     if (location.pathname !== path) history.replaceState(null, '', path);
     showRoom();
 
-    if (msg.created) toast('Raum ist offen — QR scannen oder Wörter durchgeben', 'ok');
+    if (msg.created) toast(I18N.t('toast_room_open'), 'ok');
   }
 
   function leaveRoom({ silent = false } = {}) {
@@ -269,17 +283,17 @@
     el.feed.replaceChildren();
     el.liveText.value = '';
     updateFeedEmpty();
-    setConnState('offline', 'getrennt');
+    setConnState('offline', I18N.t('conn_offline'));
     history.replaceState(null, '', '/');
     showLanding();
     state.leaving = false;
-    if (!silent) toast('Raum verlassen');
+    if (!silent) toast(I18N.t('toast_left_room'));
   }
 
   function updateMembers() {
     el.members.textContent = state.members === 1
-      ? 'Nur du bist verbunden'
-      : `${state.members} Geräte verbunden`;
+      ? I18N.t('members_only_you')
+      : I18N.t('members_count', { count: state.members });
   }
 
   function updateFeedEmpty() {
@@ -289,7 +303,7 @@
   /* ------------------------------------------------------------ Live-Textbox */
 
   el.liveText.addEventListener('input', () => {
-    el.liveState.textContent = 'tippt …';
+    el.liveState.textContent = I18N.t('live_state_typing');
     clearTimeout(state.textTimer);
     state.textTimer = setTimeout(flushText, TEXT_DEBOUNCE);
   });
@@ -298,7 +312,7 @@
     state.textTimer = null;
     if (!inRoom()) return;
     send({ type: 'text-sync', full: el.liveText.value });
-    el.liveState.textContent = 'synchron';
+    el.liveState.textContent = I18N.t('live_state_synced');
   }
 
   function applyRemoteText(msg) {
@@ -317,7 +331,7 @@
       const pos = atEnd ? msg.full.length : Math.min(caret, msg.full.length);
       box.setSelectionRange(pos, pos);
     }
-    el.liveState.textContent = 'aktualisiert';
+    el.liveState.textContent = I18N.t('live_state_updated');
   }
 
   /* ------------------------------------------------------------- Feed-Items */
@@ -360,7 +374,7 @@
 
   function addTextItem({ content, from, own }) {
     const li = addItemNode({
-      title: own ? 'Von dir gesendet' : `Text von ${from}`,
+      title: own ? I18N.t('item_title_own') : I18N.t('item_title_from', { name: from }),
       meta: timestamp(),
       own,
     });
@@ -371,7 +385,7 @@
     li.append(pre);
 
     const actions = addActions(li);
-    actions.append(actionButton('Kopieren', async () => {
+    actions.append(actionButton(I18N.t('action_copy'), async () => {
       await copyText(content);
     }, true));
   }
@@ -392,7 +406,7 @@
   function beginIncomingFile(msg) {
     const li = addItemNode({
       title: msg.name,
-      meta: `${formatBytes(msg.size)} · von ${msg.from.name}`,
+      meta: `${formatBytes(msg.size)} · ${I18N.t('meta_from_name', { name: msg.from.name })}`,
       own: false,
     });
     addProgress(li);
@@ -428,7 +442,7 @@
     const actions = addActions(li);
     const download = document.createElement('a');
     download.className = 'btn btn-primary';
-    download.textContent = 'Herunterladen';
+    download.textContent = I18N.t('action_download');
     download.href = url;
     download.download = entry.name;
     actions.append(download);
@@ -436,11 +450,11 @@
     // Text kann jeder Browser in die Zwischenablage legen, Bilder meistens,
     // beliebige Dateien nicht — deshalb gibt es Copy nur dort, wo es klappt.
     if (entry.mime.startsWith('text/')) {
-      actions.append(actionButton('Kopieren', async () => {
+      actions.append(actionButton(I18N.t('action_copy'), async () => {
         await copyText(await blob.text());
       }));
     } else if (entry.mime.startsWith('image/')) {
-      actions.append(actionButton('Bild kopieren', () => copyImage(blob)));
+      actions.append(actionButton(I18N.t('action_copy_image'), () => copyImage(blob)));
     }
   }
 
@@ -450,7 +464,7 @@
     state.incoming.delete(id);
     entry.node.remove();
     updateFeedEmpty();
-    toast(`Übertragung von „${entry.name}" abgebrochen`, 'error');
+    toast(I18N.t('toast_transfer_aborted', { name: entry.name }), 'error');
   }
 
   /* ------------------------------------------------------------ Zwischenablage */
@@ -458,24 +472,24 @@
   async function copyText(text) {
     try {
       await navigator.clipboard.writeText(text);
-      toast('In die Zwischenablage kopiert', 'ok');
+      toast(I18N.t('toast_copied'), 'ok');
     } catch {
-      toast('Kopieren wurde abgelehnt — Text markieren und Strg/Cmd+C', 'error');
+      toast(I18N.t('toast_copy_denied'), 'error');
     }
   }
 
   async function copyImage(blob) {
     try {
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      toast('Bild in die Zwischenablage kopiert', 'ok');
+      toast(I18N.t('toast_image_copied'), 'ok');
     } catch {
-      toast('Dieser Browser kopiert keine Bilder — nutze Herunterladen', 'error');
+      toast(I18N.t('toast_image_copy_unsupported'), 'error');
     }
   }
 
   async function pasteFromClipboard() {
     if (!navigator.clipboard || !navigator.clipboard.read) {
-      toast('Zwischenablage lesen geht hier nicht — nimm Strg/Cmd+V oder den Datei-Button', 'error');
+      toast(I18N.t('toast_clipboard_unavailable'), 'error');
       return;
     }
     let items;
@@ -483,7 +497,7 @@
       items = await navigator.clipboard.read();
     } catch {
       // Auf iOS-Safari und ohne Nutzerfreigabe scheitert das regelmaessig.
-      toast('Zwischenablage nicht lesbar — nimm Strg/Cmd+V oder den Datei-Button', 'error');
+      toast(I18N.t('toast_clipboard_unreadable'), 'error');
       return;
     }
     let handled = 0;
@@ -492,7 +506,7 @@
       if (imageType) {
         const blob = await item.getType(imageType);
         const ext = imageType.split('/')[1] || 'png';
-        queueFile(new File([blob], `bild-${Date.now()}.${ext}`, { type: imageType }));
+        queueFile(new File([blob], `image-${Date.now()}.${ext}`, { type: imageType }));
         handled++;
         continue;
       }
@@ -502,7 +516,7 @@
         if (text.trim()) { sendTextItem(text); handled++; }
       }
     }
-    if (!handled) toast('In der Zwischenablage war nichts Brauchbares', 'error');
+    if (!handled) toast(I18N.t('toast_clipboard_empty'), 'error');
   }
 
   /* ---------------------------------------------------------------- Senden */
@@ -510,20 +524,20 @@
   function sendTextItem(content) {
     if (!inRoom()) return;
     send({ type: 'item-text', content });
-    addTextItem({ content, from: 'dir', own: true });
+    addTextItem({ content, from: 'you', own: true });
   }
 
   function queueFile(file) {
     if (!inRoom()) return;
     if (file.size === 0) {
-      toast(`„${file.name}" ist leer und wurde übersprungen`, 'error');
+      toast(I18N.t('toast_file_empty', { name: file.name }), 'error');
       return;
     }
     // Uploads laufen streng nacheinander: gleichzeitige Transfers wuerden
     // sich nur die Bandbreite und den Sendepuffer streitig machen.
     state.uploadChain = state.uploadChain.then(() => sendFile(file)).catch((err) => {
       console.error(err);
-      toast(`„${file.name}" konnte nicht gesendet werden`, 'error');
+      toast(I18N.t('toast_file_send_failed', { name: file.name }), 'error');
     });
   }
 
@@ -539,7 +553,7 @@
 
     const li = addItemNode({
       title: file.name,
-      meta: `${formatBytes(file.size)} · von dir`,
+      meta: `${formatBytes(file.size)} · ${I18N.t('meta_from_you')}`,
       own: true,
     });
     addProgress(li);
@@ -554,7 +568,7 @@
       if (!(await waitForBuffer())) {
         li.remove();
         updateFeedEmpty();
-        toast(`Verbindung weg — „${file.name}" wurde nicht gesendet`, 'error');
+        toast(I18N.t('toast_connection_lost', { name: file.name }), 'error');
         return;
       }
       sendBinary(frame);
@@ -565,7 +579,7 @@
     send({ type: 'file-end', id });
     li.querySelector('.progress')?.remove();
     const actions = addActions(li);
-    actions.append(actionButton('Erneut senden', () => queueFile(file)));
+    actions.append(actionButton(I18N.t('action_resend'), () => queueFile(file)));
   }
 
   // waitForBuffer haelt an, solange der Sendepuffer voll ist, und meldet
@@ -587,7 +601,7 @@
   el.btnCreate.addEventListener('click', () => {
     el.btnCreate.disabled = true;
     setTimeout(() => { el.btnCreate.disabled = false; }, 1000);
-    send({ type: 'create' });
+    send({ type: 'create', lang: I18N.lang });
   });
 
   el.joinForm.addEventListener('submit', (event) => {
@@ -676,8 +690,8 @@
       try { localStorage.setItem('drop-theme', theme); } catch { /* egal */ }
     }
     const dark = effectiveTheme() === 'dark';
-    el.themeToggle.textContent = dark ? 'Hell' : 'Dunkel';
-    el.themeToggle.title = dark ? 'Zu hell wechseln' : 'Zu dunkel wechseln';
+    el.themeToggle.textContent = dark ? I18N.t('theme_light') : I18N.t('theme_dark');
+    el.themeToggle.title = dark ? I18N.t('theme_toggle_title_to_light') : I18N.t('theme_toggle_title_to_dark');
     // Die Farbe der Browser-Leiste folgt sonst weiter dem System statt dem
     // gewählten Schema.
     document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
@@ -709,7 +723,7 @@
       // Das Bild kommt über den eigenen Proxy; ohne Bild bleibt die Stelle
       // einfach leer, es gibt keinen Ersatz.
       if (me.authenticated && me.avatar) {
-        el.avatar.alt = me.name ? `Profilbild von ${me.name}` : 'Profilbild';
+        el.avatar.alt = me.name ? I18N.t('avatar_alt_named', { name: me.name }) : I18N.t('avatar_alt');
         el.avatar.src = '/api/avatar';
       }
     } catch {
@@ -719,6 +733,7 @@
   }
 
   function start() {
+    applyI18n();
     applyTheme(null);
     showLanding();
     updateFeedEmpty();

@@ -7,6 +7,7 @@ import (
 	"github.com/skip2/go-qrcode"
 
 	"github.com/doenke/drop/internal/httpx"
+	"github.com/doenke/drop/internal/i18n"
 	"github.com/doenke/drop/internal/room"
 )
 
@@ -29,12 +30,12 @@ func New(hub *room.Hub, limiter *httpx.Limiter, roomURL func(string) string, tru
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !h.limiter.Allow(httpx.ClientIP(r, h.trustProxy)) {
-		http.Error(w, "Zu viele Anfragen", http.StatusTooManyRequests)
+		http.Error(w, i18n.Text(r, i18n.QRRateLimited), http.StatusTooManyRequests)
 		return
 	}
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		http.Error(w, "Token fehlt", http.StatusBadRequest)
+		http.Error(w, i18n.Text(r, i18n.QRTokenMissing), http.StatusBadRequest)
 		return
 	}
 	if _, err := h.hub.ByToken(token); err != nil {
@@ -44,7 +45,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	png, err := qrcode.Encode(h.roomURL(token), qrcode.Medium, pngSize)
 	if err != nil {
-		http.Error(w, "QR-Code konnte nicht erzeugt werden", http.StatusInternalServerError)
+		http.Error(w, i18n.Text(r, i18n.QRGenerateFailed), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "image/png")

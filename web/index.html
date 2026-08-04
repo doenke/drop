@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -20,6 +20,7 @@
     if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
   } catch (e) { /* privater Modus ohne localStorage */ }
 </script>
+<script src="/static/i18n.js" defer></script>
 <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -32,16 +33,16 @@
     <span class="brand-name">{{.Title}}</span>
   </a>
   <div class="topbar-right">
-    <span id="conn" class="conn" data-state="offline" title="Verbindung">
+    <span id="conn" class="conn" data-state="offline" data-i18n-title="conn_title">
       <span class="conn-dot" aria-hidden="true"></span>
-      <span class="conn-label">getrennt</span>
+      <span class="conn-label" data-i18n="conn_offline">offline</span>
     </span>
     <span id="account" class="account" hidden>
       <img id="avatar" class="avatar" alt="" width="28" height="28" hidden>
       <span id="account-name"></span>
     </span>
     <button id="theme-toggle" class="theme-toggle" type="button"
-            aria-label="Farbschema umschalten">Farbschema</button>
+            data-i18n-aria-label="theme_toggle_aria_label"></button>
   </div>
 </header>
 
@@ -50,29 +51,29 @@
   <section id="view-landing" class="view" hidden>
     <div class="stack">
       <div class="card card-hero">
-        <h1>Schnell rübergeschoben.</h1>
-        <p class="lede">
-          Text, Links, Passwörter und Dateien zwischen deinen Geräten — ohne
-          Umweg über Messenger oder Mail. Nichts wird gespeichert.
+        <h1 data-i18n="hero_title">Fast, right across.</h1>
+        <p class="lede" data-i18n="hero_lede">
+          Text, links, passwords, and files between your devices — no
+          detour through messengers or mail. Nothing is stored.
         </p>
         <div id="create-box" class="hero-actions" hidden>
-          <button id="btn-create" class="btn btn-primary btn-lg" type="button">Raum erstellen</button>
-          <p class="hint">Der Raum verschwindet, sobald ihn alle verlassen haben.</p>
+          <button id="btn-create" class="btn btn-primary btn-lg" type="button" data-i18n="btn_create">Create room</button>
+          <p class="hint" data-i18n="hint_create">The room disappears once everyone has left it.</p>
         </div>
         <div id="login-box" class="hero-actions" hidden>
-          <a id="btn-login" class="btn btn-primary btn-lg" href="/auth/login">Anmelden</a>
-          <p class="hint">Zum Erstellen eines Raums brauchst du einen Login. Beitreten geht ohne.</p>
+          <a id="btn-login" class="btn btn-primary btn-lg" href="/auth/login" data-i18n="btn_login">Sign in</a>
+          <p class="hint" data-i18n="hint_login">You need to sign in to create a room. Joining works without one.</p>
         </div>
       </div>
 
       <div class="card">
-        <h2>Einem Raum beitreten</h2>
-        <p class="hint">Scanne den QR-Code oder tippe die drei Wörter ein.</p>
+        <h2 data-i18n="join_heading">Join a room</h2>
+        <p class="hint" data-i18n="hint_join">Scan the QR code or type the three words.</p>
         <form id="join-form" class="join-form" autocomplete="off">
           <input id="join-code" class="input input-code" type="text" name="code"
-                 placeholder="apfel tanne kerze" spellcheck="false"
-                 autocapitalize="none" autocorrect="off" aria-label="Beitrittscode">
-          <button class="btn btn-primary" type="submit">Beitreten</button>
+                 spellcheck="false" autocapitalize="none" autocorrect="off"
+                 data-i18n-placeholder="join_placeholder" data-i18n-aria-label="join_aria_label">
+          <button class="btn btn-primary" type="submit" data-i18n="btn_join">Join</button>
         </form>
       </div>
     </div>
@@ -83,66 +84,66 @@
     <div class="room-grid">
       <div class="card card-invite">
         <div class="invite-qr">
-          <img id="qr" alt="QR-Code zum Beitreten" width="220" height="220">
-          <p id="qr-fallback" class="qr-fallback" hidden>
-            QR-Code nicht verfügbar — nutze die drei Wörter.
+          <img id="qr" data-i18n-alt="qr_alt" width="220" height="220">
+          <p id="qr-fallback" class="qr-fallback" hidden data-i18n="qr_fallback">
+            QR code unavailable — use the three words instead.
           </p>
         </div>
         <div class="invite-body">
-          <h2>Zweites Gerät dazuholen</h2>
-          <p class="hint">QR scannen — oder die drei Wörter auf Hauptseite eintippen.</p>
+          <h2 data-i18n="invite_heading">Add a second device</h2>
+          <p class="hint" data-i18n="invite_hint">Scan the QR code — or type the three words on the main page.</p>
           <p id="room-code" class="room-code">···</p>
           <div class="invite-actions">
-            <button id="btn-copy-link" class="btn" type="button">Link kopieren</button>
-            <button id="btn-copy-code" class="btn" type="button">Code kopieren</button>
-            <button id="btn-leave" class="btn btn-quiet" type="button">Raum verlassen</button>
+            <button id="btn-copy-link" class="btn" type="button" data-i18n="btn_copy_link">Copy link</button>
+            <button id="btn-copy-code" class="btn" type="button" data-i18n="btn_copy_code">Copy code</button>
+            <button id="btn-leave" class="btn btn-quiet" type="button" data-i18n="btn_leave">Leave room</button>
           </div>
-          <p id="members" class="members">1 Gerät verbunden</p>
+          <p id="members" class="members"></p>
         </div>
       </div>
 
       <div class="card card-live">
         <div class="card-head">
-          <h2>Live-Textbox</h2>
-          <span id="live-state" class="badge">bereit</span>
+          <h2 data-i18n="live_heading">Live text box</h2>
+          <span id="live-state" class="badge" data-i18n="live_state_ready">ready</span>
         </div>
-        <p class="hint">Was hier steht, sehen alle im Raum sofort. Landet nicht im Verlauf.</p>
+        <p class="hint" data-i18n="live_hint">What's typed here is seen by everyone in the room instantly. It isn't kept in a history.</p>
         <textarea id="live-text" class="live-text" spellcheck="false"
-                  placeholder="Tippen oder einfügen — erscheint direkt auf dem anderen Gerät."
-                  aria-label="Live-Textbox"></textarea>
+                  data-i18n-placeholder="live_placeholder"
+                  data-i18n-aria-label="live_aria_label"></textarea>
       </div>
 
       <div class="card card-feed">
         <div class="card-head">
-          <h2>Übertragungen</h2>
+          <h2 data-i18n="transfers_heading">Transfers</h2>
           <div class="feed-actions">
-            <button id="btn-paste" class="btn" type="button">Einfügen</button>
-            <button id="btn-file" class="btn btn-primary" type="button">Datei senden</button>
+            <button id="btn-paste" class="btn" type="button" data-i18n="btn_paste">Paste</button>
+            <button id="btn-file" class="btn btn-primary" type="button" data-i18n="btn_file">Send file</button>
             <input id="file-input" type="file" multiple hidden>
           </div>
         </div>
-        <p class="hint">Ziehe Dateien irgendwo auf das Fenster, oder drücke Strg/Cmd&nbsp;+&nbsp;V.</p>
+        <p class="hint" data-i18n="feed_hint">Drag files anywhere onto the window, or press Ctrl/Cmd&nbsp;+&nbsp;V.</p>
         <ul id="feed" class="feed"></ul>
-        <p id="feed-empty" class="feed-empty">Noch nichts übertragen.</p>
+        <p id="feed-empty" class="feed-empty" data-i18n="feed_empty">Nothing sent yet.</p>
       </div>
     </div>
   </section>
 </main>
 
 <footer class="site-footer">
-  <p>{{.Title}} ist quelloffen.
-    <a href="https://github.com/doenke/drop" target="_blank" rel="noopener noreferrer">Quellcode auf GitHub</a>
+  <p>{{.Title}} <span data-i18n="footer_opensource">is open source.</span>
+    <a href="https://github.com/doenke/drop" target="_blank" rel="noopener noreferrer" data-i18n="footer_github">Source code on GitHub</a>
   </p>
 </footer>
 
 <div id="dropzone" class="dropzone" hidden>
-  <div class="dropzone-inner">Loslassen zum Senden</div>
+  <div class="dropzone-inner" data-i18n="dropzone_text">Drop to send</div>
 </div>
 
 <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
 <noscript>
-  <p class="noscript">drop braucht JavaScript — die Übertragung läuft komplett über eine WebSocket-Verbindung.</p>
+  <p class="noscript">drop needs JavaScript — the transfer runs entirely over a WebSocket connection.</p>
 </noscript>
 </body>
 </html>

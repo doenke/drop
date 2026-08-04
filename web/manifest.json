@@ -1,8 +1,8 @@
 {
   "name": "drop",
   "short_name": "drop",
-  "description": "Text, Links, Passwörter und Dateien schnell zwischen Geräten schieben. Ephemer, nichts wird gespeichert.",
-  "lang": "de",
+  "description": "Push text, links, passwords, and files between devices, fast. Ephemeral, nothing is stored.",
+  "lang": "en",
   "dir": "ltr",
   "start_url": "/",
   "scope": "/",
