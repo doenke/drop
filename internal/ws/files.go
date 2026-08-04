@@ -23,24 +23,24 @@ type upload struct {
 
 func (c *conn) handleFileMeta(msg clientMsg) error {
 	if c.member == nil {
-		c.fail(errRoomState, "Erst einem Raum beitreten")
+		c.fail(errNotInRoom, "Join a room first")
 		return nil
 	}
 	id := msg.ID
 	if id == "" || len(id) > maxBinaryIDLen {
-		c.fail(errBadMessage, "file-meta ohne brauchbare ID")
+		c.fail(errFileIDInvalid, "file-meta without a usable ID")
 		return nil
 	}
 	if _, exists := c.uploads[id]; exists {
-		c.fail(errBadMessage, "Diese Übertragung läuft bereits")
+		c.fail(errUploadDuplicateID, "This transfer is already in progress")
 		return nil
 	}
 	if len(c.uploads) >= maxOpenUploads {
-		c.fail(errRoomState, "Zu viele gleichzeitige Übertragungen")
+		c.fail(errTooManyUploads, "Too many concurrent transfers")
 		return nil
 	}
 	if msg.Size <= 0 || msg.Size > c.h.limits.MaxFileSize {
-		c.fail(errTooLarge, "Die Datei ist zu groß")
+		c.fail(errFileTooLarge, "The file is too large")
 		return nil
 	}
 
@@ -63,25 +63,25 @@ func (c *conn) handleFileMeta(msg clientMsg) error {
 // gespiegelt — der Server kopiert nichts auf Platte und hält nichts fest.
 func (c *conn) handleBinary(data []byte) error {
 	if c.member == nil {
-		c.fail(errRoomState, "Erst einem Raum beitreten")
+		c.fail(errNotInRoom, "Join a room first")
 		return nil
 	}
 	id, payload, err := splitBinaryFrame(data)
 	if err != nil {
-		c.fail(errBadMessage, "Binärframe ist fehlerhaft")
+		c.fail(errBinaryFrameInvalid, "Binary frame is malformed")
 		return nil
 	}
 	up, ok := c.uploads[id]
 	if !ok {
-		c.fail(errBadMessage, "Chunk ohne angekündigte Datei")
+		c.fail(errChunkUnannounced, "Chunk without an announced file")
 		return nil
 	}
 	if int64(len(payload)) > c.h.limits.MaxChunkSize {
-		c.abortUpload(id, "Chunk ist zu groß")
+		c.abortUpload(id, errChunkTooLarge, "Chunk is too large")
 		return nil
 	}
 	if up.sent+int64(len(payload)) > up.size {
-		c.abortUpload(id, "Es kamen mehr Daten als angekündigt")
+		c.abortUpload(id, errUploadOverflow, "More data arrived than announced")
 		return nil
 	}
 	up.sent += int64(len(payload))
@@ -92,12 +92,12 @@ func (c *conn) handleBinary(data []byte) error {
 
 func (c *conn) handleFileEnd(msg clientMsg) error {
 	if c.member == nil {
-		c.fail(errRoomState, "Erst einem Raum beitreten")
+		c.fail(errNotInRoom, "Join a room first")
 		return nil
 	}
 	up, ok := c.uploads[msg.ID]
 	if !ok {
-		c.fail(errBadMessage, "file-end ohne laufende Übertragung")
+		c.fail(errFileEndUnknown, "file-end without a running transfer")
 		return nil
 	}
 	delete(c.uploads, msg.ID)
@@ -113,10 +113,10 @@ func (c *conn) handleFileEnd(msg clientMsg) error {
 }
 
 // abortUpload bricht eine laufende Übertragung ab und sagt es beiden Seiten.
-func (c *conn) abortUpload(id, reason string) {
+func (c *conn) abortUpload(id, code, reason string) {
 	delete(c.uploads, id)
 	c.room.Broadcast(c.member, frame(fileIDMsg{Type: msgFileAbort, ID: id}))
-	c.fail(errTooLarge, reason)
+	c.fail(code, reason)
 }
 
 // abortUploads räumt beim Verbindungsabbruch auf, damit die Gegenstellen ihre
@@ -144,7 +144,7 @@ func sanitizeFilename(name string) string {
 	// "../../etc/passwd" durch reines Zeichenlöschen "....etcpasswd".
 	name = strings.TrimSpace(path.Base(strings.TrimSpace(name)))
 	if name == "." || name == ".." || name == "/" || name == "" {
-		return "datei"
+		return "file"
 	}
 	if len(name) > 255 {
 		name = name[:255]

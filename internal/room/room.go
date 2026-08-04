@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -89,6 +88,7 @@ type Room struct {
 	Token   string // langer Zufallstoken, steckt im QR-Link
 	Code    string // 3-Wörter-Code, menschlicher Fallback
 	OwnerID string
+	Lang    string // Sprache des Erstellers; bestimmt Wortliste und Gerätenamen
 	Created time.Time
 
 	maxMembers int
@@ -114,7 +114,7 @@ func (r *Room) Join(id string, owner bool) (*Member, error) {
 		return nil, ErrRoomFull
 	}
 	r.nextOrd++
-	m := newMember(id, "Gerät "+strconv.Itoa(r.nextOrd), owner)
+	m := newMember(id, deviceLabel(r.Lang, r.nextOrd), owner)
 	r.members[m] = struct{}{}
 	r.emptySince = time.Time{}
 	return m, nil
@@ -244,8 +244,10 @@ func NewHub(opts Options) *Hub {
 }
 
 // Create legt einen Raum an: interne ID, langer Token für den QR-Code und ein
-// 3-Wörter-Code, der unter den offenen Räumen eindeutig ist.
-func (h *Hub) Create(ownerID string) (*Room, error) {
+// 3-Wörter-Code, der unter den offenen Räumen eindeutig ist. lang bestimmt
+// die Wortliste und die Sprache der generischen Gerätenamen; eine unbekannte
+// oder leere Angabe fällt auf Englisch zurück.
+func (h *Hub) Create(ownerID, lang string) (*Room, error) {
 	id, err := randomID(12)
 	if err != nil {
 		return nil, err
@@ -254,15 +256,19 @@ func (h *Hub) Create(ownerID string) (*Room, error) {
 	if err != nil {
 		return nil, err
 	}
+	lang = resolveLang(lang)
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	// Der Wörter-Namensraum ist klein, aber es sind immer nur wenige Räume
-	// offen — ein paar Versuche reichen also sicher.
+	// offen — ein paar Versuche reichen also sicher. Kandidaten aus
+	// verschiedenen Sprachlisten landen in derselben byCode-Map; eine
+	// zufällige Kollision zwischen einem englischen und einem deutschen Code
+	// fängt dieser Retry-Loop ohne Zusatzlogik mit ab.
 	var code string
 	for i := 0; i < 100; i++ {
-		c, err := newWordCode()
+		c, err := newWordCode(lang)
 		if err != nil {
 			return nil, err
 		}
@@ -280,6 +286,7 @@ func (h *Hub) Create(ownerID string) (*Room, error) {
 		Token:      token,
 		Code:       code,
 		OwnerID:    ownerID,
+		Lang:       lang,
 		Created:    h.now(),
 		members:    map[*Member]struct{}{},
 		emptySince: h.now(),

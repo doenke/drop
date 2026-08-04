@@ -8,14 +8,24 @@ import (
 	"strings"
 )
 
-//go:embed words.txt
-var wordsFile string
+//go:embed words_en.txt
+var wordsEnFile string
+
+//go:embed words_de.txt
+var wordsDeFile string
 
 // WordsPerCode ist die Länge des menschlichen Beitrittscodes.
 const WordsPerCode = 3
 
-// words ist die kuratierte Wortliste aus words.txt.
-var words = parseWords(wordsFile)
+// defaultLang ist die Sprache, auf die eine unbekannte oder leere Angabe
+// fällt — Englisch ist der neue Standard der App.
+const defaultLang = "en"
+
+// wordsByLang sind die kuratierten Wortlisten je Sprache.
+var wordsByLang = map[string][]string{
+	"en": parseWords(wordsEnFile),
+	"de": parseWords(wordsDeFile),
+}
 
 func parseWords(raw string) []string {
 	var out []string
@@ -32,12 +42,24 @@ func parseWords(raw string) []string {
 	return out
 }
 
-// WordCount gibt die Größe der Wortliste zurück (für Tests und Logging).
-func WordCount() int { return len(words) }
+// resolveLang bildet eine beliebige Client-Angabe auf eine unterstützte
+// Sprache ab; unbekannt oder leer landet auf defaultLang.
+func resolveLang(lang string) string {
+	if _, ok := wordsByLang[lang]; ok {
+		return lang
+	}
+	return defaultLang
+}
 
-// newWordCode zieht WordsPerCode Wörter mit crypto/rand. Wiederholungen sind
-// erlaubt — sie kosten kaum Entropie und die Prüfung wäre nur Ballast.
-func newWordCode() (string, error) {
+// WordCount gibt die Größe der Wortliste einer Sprache zurück (für Tests und
+// Logging).
+func WordCount(lang string) int { return len(wordsByLang[resolveLang(lang)]) }
+
+// newWordCode zieht WordsPerCode Wörter aus der Liste der angegebenen
+// Sprache mit crypto/rand. Wiederholungen sind erlaubt — sie kosten kaum
+// Entropie und die Prüfung wäre nur Ballast.
+func newWordCode(lang string) (string, error) {
+	words := wordsByLang[resolveLang(lang)]
 	max := big.NewInt(int64(len(words)))
 	parts := make([]string, WordsPerCode)
 	for i := range parts {
@@ -61,4 +83,15 @@ func NormalizeCode(in string) string {
 	)
 	fields := strings.Fields(replacer.Replace(in))
 	return strings.Join(fields, "-")
+}
+
+// deviceLabels sind die Präfixe für die generischen Gerätenamen ("Device 1",
+// "Gerät 1"), je nach Raumsprache.
+var deviceLabels = map[string]string{
+	"en": "Device ",
+	"de": "Gerät ",
+}
+
+func deviceLabel(lang string, ord int) string {
+	return deviceLabels[resolveLang(lang)] + fmt.Sprint(ord)
 }

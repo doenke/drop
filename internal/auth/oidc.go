@@ -14,6 +14,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
+
+	"github.com/doenke/drop/internal/i18n"
 )
 
 // flowState überbrückt den Redirect zu Pocket ID. Es liegt signiert im
@@ -68,7 +70,7 @@ func (o *OIDC) handleLogin(w http.ResponseWriter, r *http.Request) {
 	state, err1 := randomToken(24)
 	nonce, err2 := randomToken(24)
 	if err1 != nil || err2 != nil {
-		http.Error(w, "Zufallszahlen nicht verfügbar", http.StatusInternalServerError)
+		http.Error(w, i18n.Text(r, i18n.LoginRandomUnavailable), http.StatusInternalServerError)
 		return
 	}
 	verifier := oauth2.GenerateVerifier()
@@ -81,7 +83,7 @@ func (o *OIDC) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(10 * time.Minute).Unix(),
 	}
 	if err := o.setFlowCookie(w, flow); err != nil {
-		http.Error(w, "Login konnte nicht gestartet werden", http.StatusInternalServerError)
+		http.Error(w, i18n.Text(r, i18n.LoginStartFailed), http.StatusInternalServerError)
 		return
 	}
 
@@ -96,18 +98,18 @@ func (o *OIDC) handleCallback(w http.ResponseWriter, r *http.Request) {
 	flow, err := o.readFlowCookie(r)
 	o.clearFlowCookie(w)
 	if err != nil {
-		http.Error(w, "Login-Vorgang abgelaufen, bitte erneut versuchen", http.StatusBadRequest)
+		http.Error(w, i18n.Text(r, i18n.LoginFlowExpired), http.StatusBadRequest)
 		return
 	}
 	if desc := r.URL.Query().Get("error"); desc != "" {
 		o.log.Warn("OIDC-Provider meldet Fehler", "error", desc)
-		http.Error(w, "Anmeldung abgelehnt", http.StatusForbidden)
+		http.Error(w, i18n.Text(r, i18n.LoginDenied), http.StatusForbidden)
 		return
 	}
 	// Konstantzeit-Vergleich ist hier unnötig: der State ist kein Geheimnis,
 	// sondern nur der CSRF-Schutz des Redirects.
 	if r.URL.Query().Get("state") != flow.State {
-		http.Error(w, "State stimmt nicht", http.StatusBadRequest)
+		http.Error(w, i18n.Text(r, i18n.LoginStateMismatch), http.StatusBadRequest)
 		return
 	}
 
@@ -117,22 +119,22 @@ func (o *OIDC) handleCallback(w http.ResponseWriter, r *http.Request) {
 	tok, err := o.oauth.Exchange(ctx, r.URL.Query().Get("code"), oauth2.VerifierOption(flow.Verifier))
 	if err != nil {
 		o.log.Warn("Token-Exchange fehlgeschlagen", "err", err)
-		http.Error(w, "Anmeldung fehlgeschlagen", http.StatusBadGateway)
+		http.Error(w, i18n.Text(r, i18n.LoginExchangeFailed), http.StatusBadGateway)
 		return
 	}
 	rawID, ok := tok.Extra("id_token").(string)
 	if !ok {
-		http.Error(w, "Kein ID-Token erhalten", http.StatusBadGateway)
+		http.Error(w, i18n.Text(r, i18n.LoginNoIDToken), http.StatusBadGateway)
 		return
 	}
 	idToken, err := o.verifier.Verify(ctx, rawID)
 	if err != nil {
 		o.log.Warn("ID-Token ungültig", "err", err)
-		http.Error(w, "Anmeldung fehlgeschlagen", http.StatusForbidden)
+		http.Error(w, i18n.Text(r, i18n.LoginInvalidToken), http.StatusForbidden)
 		return
 	}
 	if idToken.Nonce != flow.Nonce {
-		http.Error(w, "Nonce stimmt nicht", http.StatusForbidden)
+		http.Error(w, i18n.Text(r, i18n.LoginNonceMismatch), http.StatusForbidden)
 		return
 	}
 
@@ -152,7 +154,7 @@ func (o *OIDC) handleCallback(w http.ResponseWriter, r *http.Request) {
 		Picture: pictureURL(claims.Picture),
 	}
 	if err := o.signer.Issue(w, sess); err != nil {
-		http.Error(w, "Session konnte nicht gesetzt werden", http.StatusInternalServerError)
+		http.Error(w, i18n.Text(r, i18n.LoginSessionFailed), http.StatusInternalServerError)
 		return
 	}
 
@@ -267,7 +269,7 @@ func displayName(candidates ...string) string {
 			return c
 		}
 	}
-	return "Angemeldet"
+	return "Signed in"
 }
 
 func randomToken(n int) (string, error) {

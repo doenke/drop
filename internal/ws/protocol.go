@@ -28,16 +28,34 @@ const (
 	msgError      = "error"
 )
 
-// Fehlercodes, die das Frontend unterscheiden kann.
+// Fehlercodes, die das Frontend unterscheiden kann. Ein Code pro
+// unterschiedlicher Situation, damit beim Übersetzen keine Nuance verloren
+// geht — echte Dubletten (z. B. mehrere "erst einem Raum beitreten"-Stellen)
+// teilen sich weiterhin einen Code.
 const (
-	errUnauthorized = "unauthorized"
-	errNotFound     = "room-not-found"
-	errRoomFull     = "room-full"
-	errRateLimited  = "rate-limited"
-	errBadMessage   = "bad-message"
-	errTooLarge     = "too-large"
-	errRoomState    = "room-state"
-	errTooSlow      = "too-slow"
+	errUnauthorized       = "unauthorized"
+	errNotFound           = "room-not-found"
+	errRoomFull           = "room-full"
+	errRateLimited        = "rate-limited"
+	errInvalidJSON        = "invalid-json"
+	errUnknownType        = "unknown-type"
+	errAlreadyInRoom      = "already-in-room"
+	errCreateFailed       = "create-failed"
+	errMissingCodeOrToken = "missing-code-or-token"
+	errNotInRoom          = "not-in-room"
+	errTextSyncEmpty      = "text-sync-empty"
+	errLiveTextTooLarge   = "live-text-too-large"
+	errItemTextEmpty      = "item-text-empty"
+	errTextItemTooLarge   = "text-item-too-large"
+	errFileIDInvalid      = "file-id-invalid"
+	errUploadDuplicateID  = "upload-duplicate-id"
+	errTooManyUploads     = "too-many-uploads"
+	errFileTooLarge       = "file-too-large"
+	errBinaryFrameInvalid = "binary-frame-invalid"
+	errChunkUnannounced   = "chunk-unannounced"
+	errChunkTooLarge      = "chunk-too-large"
+	errUploadOverflow     = "upload-overflow"
+	errFileEndUnknown     = "file-end-unknown"
 )
 
 // clientMsg deckt alle eingehenden Steuernachrichten ab. Full ist ein Zeiger,
@@ -53,6 +71,7 @@ type clientMsg struct {
 	Name    string  `json:"name,omitempty"`
 	Mime    string  `json:"mime,omitempty"`
 	Size    int64   `json:"size,omitempty"`
+	Lang    string  `json:"lang,omitempty"`
 }
 
 // peer ist die abgespeckte Sicht auf ein Mitglied, die andere sehen dürfen.

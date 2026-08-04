@@ -13,7 +13,7 @@ func testHub(t *testing.T) *Hub {
 
 func TestCreateRegistersAllLookups(t *testing.T) {
 	h := testHub(t)
-	r, err := h.Create("owner-1")
+	r, err := h.Create("owner-1", "en")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -37,11 +37,39 @@ func TestCreateRegistersAllLookups(t *testing.T) {
 	}
 }
 
+func TestCreateLangSelectsWordListAndDeviceLabel(t *testing.T) {
+	h := testHub(t)
+
+	de, err := h.Create("owner", "de")
+	if err != nil {
+		t.Fatalf("Create (de): %v", err)
+	}
+	if de.Lang != "de" {
+		t.Fatalf("Lang = %q, erwartet \"de\"", de.Lang)
+	}
+	m, _ := de.Join(id(t), true)
+	if m.Name != "Gerät 1" {
+		t.Errorf("Gerätename (de) = %q, erwartet \"Gerät 1\"", m.Name)
+	}
+
+	unknown, err := h.Create("owner", "xx")
+	if err != nil {
+		t.Fatalf("Create (unbekannte Sprache): %v", err)
+	}
+	if unknown.Lang != "en" {
+		t.Fatalf("Lang bei unbekannter Angabe = %q, erwartet \"en\"", unknown.Lang)
+	}
+	m2, _ := unknown.Join(id(t), true)
+	if m2.Name != "Device 1" {
+		t.Errorf("Gerätename (Fallback) = %q, erwartet \"Device 1\"", m2.Name)
+	}
+}
+
 func TestCodesAreUniqueAcrossOpenRooms(t *testing.T) {
 	h := testHub(t)
 	seen := map[string]bool{}
 	for i := 0; i < 300; i++ {
-		r, err := h.Create("owner")
+		r, err := h.Create("owner", "en")
 		if err != nil {
 			t.Fatalf("Create: %v", err)
 		}
@@ -54,7 +82,7 @@ func TestCodesAreUniqueAcrossOpenRooms(t *testing.T) {
 
 func TestJoinLimitAndLeave(t *testing.T) {
 	h := testHub(t)
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 
 	var members []*Member
 	for i := 0; i < 3; i++ {
@@ -86,7 +114,7 @@ func TestJoinLimitAndLeave(t *testing.T) {
 
 func TestBroadcastSkipsSender(t *testing.T) {
 	h := testHub(t)
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 	a, _ := r.Join(id(t), true)
 	b, _ := r.Join(id(t), false)
 
@@ -109,7 +137,7 @@ func TestBroadcastSkipsSender(t *testing.T) {
 
 func TestSendClosesSlowMember(t *testing.T) {
 	h := testHub(t)
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 	m, _ := r.Join(id(t), false)
 
 	for i := 0; i < sendBuffer; i++ {
@@ -132,7 +160,7 @@ func TestSendClosesSlowMember(t *testing.T) {
 
 func TestTextIsLastWriteWins(t *testing.T) {
 	h := testHub(t)
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 
 	if _, seq := r.Text(); seq != 0 {
 		t.Fatalf("frischer Raum hat Sequenz %d", seq)
@@ -153,7 +181,7 @@ func TestCollectRemovesEmptyRoomAfterGrace(t *testing.T) {
 	now := time.Now()
 	h.now = func() time.Time { return now }
 
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 	m, _ := r.Join(id(t), true)
 
 	// Solange jemand drin ist, wird nicht aufgeräumt (unterhalb von MaxAge).
@@ -192,7 +220,7 @@ func TestCollectRemovesOverAgedRoom(t *testing.T) {
 	now := time.Now()
 	h.now = func() time.Time { return now }
 
-	r, _ := h.Create("owner")
+	r, _ := h.Create("owner", "en")
 	m, _ := r.Join(id(t), true)
 
 	now = now.Add(2 * time.Hour) // MaxAge ist eine Stunde

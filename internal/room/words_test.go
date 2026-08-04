@@ -8,59 +8,90 @@ import (
 
 var wordPattern = regexp.MustCompile(`^[a-z]{4,12}$`)
 
-// TestWordListInvariants hält die in SPEC.md geforderten Eigenschaften der
+// TestWordListInvariants hält die in SPEC.md geforderten Eigenschaften jeder
 // Liste fest: kleingeschrieben, keine Umlaute, tippfreundlich, eindeutig.
 func TestWordListInvariants(t *testing.T) {
-	if len(words) < 400 {
-		t.Fatalf("Wortliste zu klein: %d", len(words))
-	}
-	seen := map[string]bool{}
-	for _, w := range words {
-		if !wordPattern.MatchString(w) {
-			t.Errorf("Wort verstößt gegen das Format: %q", w)
-		}
-		if seen[w] {
-			t.Errorf("doppeltes Wort: %q", w)
-		}
-		seen[w] = true
+	for lang, words := range wordsByLang {
+		t.Run(lang, func(t *testing.T) {
+			if len(words) < 400 {
+				t.Fatalf("Wortliste zu klein: %d", len(words))
+			}
+			seen := map[string]bool{}
+			for _, w := range words {
+				if !wordPattern.MatchString(w) {
+					t.Errorf("Wort verstößt gegen das Format: %q", w)
+				}
+				if seen[w] {
+					t.Errorf("doppeltes Wort: %q", w)
+				}
+				seen[w] = true
+			}
+		})
 	}
 }
 
-// TestWordsAreTypoDistant stellt sicher, dass keine zwei Wörter nur einen
-// Tippfehler auseinanderliegen — sonst führt ein Vertipper auf einen fremden
-// Raum statt auf eine Fehlermeldung.
+// TestWordsAreTypoDistant stellt sicher, dass innerhalb jeder Liste keine
+// zwei Wörter nur einen Tippfehler auseinanderliegen — sonst führt ein
+// Vertipper auf einen fremden Raum statt auf eine Fehlermeldung.
 func TestWordsAreTypoDistant(t *testing.T) {
-	for i := 0; i < len(words); i++ {
-		for j := i + 1; j < len(words); j++ {
-			if editDistanceAtMostOne(words[i], words[j]) {
-				t.Errorf("zu ähnlich: %q und %q", words[i], words[j])
+	for lang, words := range wordsByLang {
+		t.Run(lang, func(t *testing.T) {
+			for i := 0; i < len(words); i++ {
+				for j := i + 1; j < len(words); j++ {
+					if editDistanceAtMostOne(words[i], words[j]) {
+						t.Errorf("zu ähnlich: %q und %q", words[i], words[j])
+					}
+				}
 			}
-		}
+		})
 	}
 }
 
 func TestNewWordCode(t *testing.T) {
-	seen := map[string]bool{}
-	for i := 0; i < 200; i++ {
-		code, err := newWordCode()
-		if err != nil {
-			t.Fatalf("newWordCode: %v", err)
-		}
-		parts := strings.Split(code, "-")
-		if len(parts) != WordsPerCode {
-			t.Fatalf("Code hat %d Teile: %q", len(parts), code)
-		}
-		for _, p := range parts {
-			if !wordPattern.MatchString(p) {
-				t.Fatalf("Codeteil passt nicht zum Format: %q", p)
+	for lang := range wordsByLang {
+		t.Run(lang, func(t *testing.T) {
+			seen := map[string]bool{}
+			for i := 0; i < 200; i++ {
+				code, err := newWordCode(lang)
+				if err != nil {
+					t.Fatalf("newWordCode: %v", err)
+				}
+				parts := strings.Split(code, "-")
+				if len(parts) != WordsPerCode {
+					t.Fatalf("Code hat %d Teile: %q", len(parts), code)
+				}
+				for _, p := range parts {
+					if !wordPattern.MatchString(p) {
+						t.Fatalf("Codeteil passt nicht zum Format: %q", p)
+					}
+				}
+				seen[code] = true
+			}
+			// Bei mehreren hundert Wörtern hoch drei wären Dubletten in 200
+			// Ziehungen ein Zeichen für einen kaputten Zufallsgenerator.
+			if len(seen) < 200 {
+				t.Fatalf("nur %d verschiedene Codes aus 200 Ziehungen", len(seen))
+			}
+		})
+	}
+}
+
+func TestNewWordCodeFallsBackToDefaultLang(t *testing.T) {
+	code, err := newWordCode("xx")
+	if err != nil {
+		t.Fatalf("newWordCode: %v", err)
+	}
+	for _, p := range strings.Split(code, "-") {
+		found := false
+		for _, w := range wordsByLang[defaultLang] {
+			if w == p {
+				found = true
+				break
 			}
 		}
-		seen[code] = true
-	}
-	// Bei 535^3 Möglichkeiten wären Dubletten in 200 Ziehungen ein Zeichen
-	// für einen kaputten Zufallsgenerator.
-	if len(seen) < 200 {
-		t.Fatalf("nur %d verschiedene Codes aus 200 Ziehungen", len(seen))
+		if !found {
+			t.Errorf("Codeteil %q stammt nicht aus der Standardliste %q", p, defaultLang)
+		}
 	}
 }
 

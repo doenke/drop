@@ -120,7 +120,7 @@ func (c *conn) readLoop() {
 		}
 		var msg clientMsg
 		if err := json.Unmarshal(data, &msg); err != nil {
-			c.fail(errBadMessage, "Nachricht ist kein gültiges JSON")
+			c.fail(errInvalidJSON, "Message is not valid JSON")
 			continue
 		}
 		if err := c.dispatch(msg); err != nil {
@@ -132,7 +132,7 @@ func (c *conn) readLoop() {
 func (c *conn) dispatch(msg clientMsg) error {
 	switch msg.Type {
 	case msgCreate:
-		return c.handleCreate()
+		return c.handleCreate(msg)
 	case msgJoin:
 		return c.handleJoin(msg)
 	case msgTextSync:
@@ -144,26 +144,26 @@ func (c *conn) dispatch(msg clientMsg) error {
 	case msgFileEnd:
 		return c.handleFileEnd(msg)
 	default:
-		c.fail(errBadMessage, "unbekannter Nachrichtentyp")
+		c.fail(errUnknownType, "Unknown message type")
 		return nil
 	}
 }
 
-func (c *conn) handleCreate() error {
+func (c *conn) handleCreate(msg clientMsg) error {
 	if c.member != nil {
-		c.fail(errRoomState, "Verbindung ist schon in einem Raum")
+		c.fail(errAlreadyInRoom, "This connection is already in a room")
 		return nil
 	}
 	// Räume anlegen darf nur, wer angemeldet ist; beitreten darf jeder mit
 	// Code.
 	if !c.loggedIn {
-		c.fail(errUnauthorized, "Zum Anlegen eines Raums bitte anmelden")
+		c.fail(errUnauthorized, "Please sign in to create a room")
 		return nil
 	}
-	r, err := c.h.hub.Create(c.session.Subject)
+	r, err := c.h.hub.Create(c.session.Subject, msg.Lang)
 	if err != nil {
 		c.h.log.Error("Raum anlegen fehlgeschlagen", "err", err)
-		c.fail(errRoomState, "Raum konnte nicht angelegt werden")
+		c.fail(errCreateFailed, "Could not create room")
 		return nil
 	}
 	return c.enter(r, true)
@@ -171,13 +171,13 @@ func (c *conn) handleCreate() error {
 
 func (c *conn) handleJoin(msg clientMsg) error {
 	if c.member != nil {
-		c.fail(errRoomState, "Verbindung ist schon in einem Raum")
+		c.fail(errAlreadyInRoom, "This connection is already in a room")
 		return nil
 	}
 	// Das Rate-Limit gilt für jeden Beitrittsversuch: der Wörter-Code ist
 	// kurz genug, dass Durchprobieren sonst lohnen würde.
 	if !c.h.limiter.Allow(c.clientIP) {
-		c.fail(errRateLimited, "Zu viele Versuche, bitte kurz warten")
+		c.fail(errRateLimited, "Too many attempts, please wait a moment")
 		return nil
 	}
 
@@ -191,11 +191,11 @@ func (c *conn) handleJoin(msg clientMsg) error {
 	case strings.TrimSpace(msg.Code) != "":
 		r, err = c.h.hub.ByCode(msg.Code)
 	default:
-		c.fail(errBadMessage, "Weder Code noch Token angegeben")
+		c.fail(errMissingCodeOrToken, "Neither code nor token given")
 		return nil
 	}
 	if err != nil {
-		c.fail(errNotFound, "Dieser Raum ist nicht (mehr) offen")
+		c.fail(errNotFound, "This room is not (or no longer) open")
 		return nil
 	}
 	return c.enter(r, false)
@@ -212,10 +212,10 @@ func (c *conn) enter(r *room.Room, created bool) error {
 	m, err := r.Join(id, owner)
 	switch {
 	case errors.Is(err, room.ErrRoomFull):
-		c.fail(errRoomFull, "Der Raum ist voll")
+		c.fail(errRoomFull, "This room is full")
 		return nil
 	case errors.Is(err, room.ErrRoomClosed):
-		c.fail(errNotFound, "Dieser Raum ist nicht (mehr) offen")
+		c.fail(errNotFound, "This room is not (or no longer) open")
 		return nil
 	case err != nil:
 		return err
@@ -249,15 +249,15 @@ func (c *conn) enter(r *room.Room, created bool) error {
 
 func (c *conn) handleTextSync(msg clientMsg) error {
 	if c.member == nil {
-		c.fail(errRoomState, "Erst einem Raum beitreten")
+		c.fail(errNotInRoom, "Join a room first")
 		return nil
 	}
 	if msg.Full == nil {
-		c.fail(errBadMessage, "text-sync ohne Inhalt")
+		c.fail(errTextSyncEmpty, "text-sync without content")
 		return nil
 	}
 	if int64(len(*msg.Full)) > c.h.limits.MaxLiveTextSize {
-		c.fail(errTooLarge, "Der Text in der Live-Box ist zu lang")
+		c.fail(errLiveTextTooLarge, "The live text box content is too long")
 		return nil
 	}
 	seq := c.room.SetText(*msg.Full)
@@ -272,15 +272,15 @@ func (c *conn) handleTextSync(msg clientMsg) error {
 
 func (c *conn) handleItemText(msg clientMsg) error {
 	if c.member == nil {
-		c.fail(errRoomState, "Erst einem Raum beitreten")
+		c.fail(errNotInRoom, "Join a room first")
 		return nil
 	}
 	if msg.Content == "" {
-		c.fail(errBadMessage, "item-text ohne Inhalt")
+		c.fail(errItemTextEmpty, "item-text without content")
 		return nil
 	}
 	if int64(len(msg.Content)) > c.h.limits.MaxTextItemSize {
-		c.fail(errTooLarge, "Das Text-Snippet ist zu groß")
+		c.fail(errTextItemTooLarge, "The text snippet is too large")
 		return nil
 	}
 	id, err := room.NewMemberID()
@@ -322,10 +322,10 @@ func (c *conn) startWriter() {
 			case <-c.ctx.Done():
 				return
 			case <-m.Closed():
-				reason := "Raum geschlossen"
+				reason := "room closed"
 				status := websocket.StatusNormalClosure
 				if m.TooSlow() {
-					reason, status = "Verbindung zu langsam", websocket.StatusPolicyViolation
+					reason, status = "connection too slow", websocket.StatusPolicyViolation
 				}
 				_ = c.ws.Close(status, reason)
 				return

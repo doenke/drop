@@ -63,7 +63,7 @@ func TestApplyBrandingCustomTitleAndLogo(t *testing.T) {
 	if !strings.Contains(html, `class="header-logo" src="https://static.example.com/logo.png"`) {
 		t.Error("konfiguriertes Logo fehlt in der Kopfzeile")
 	}
-	if !strings.Contains(html, "TeamDrop ist quelloffen") {
+	if !strings.Contains(html, "TeamDrop <span") {
 		t.Error("Footer übernimmt den konfigurierten Titel nicht")
 	}
 
