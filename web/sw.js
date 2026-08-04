@@ -6,10 +6,18 @@
  * nichts von /ws, /api oder /auth angefasst.
  */
 
-const VERSION = 'drop-v2';
+// VERSION muss bei jeder Änderung an einer SHELL-Datei mit hochgezählt
+// werden. Sonst bleibt ein bereits installierter Service Worker unverändert
+// (der Browser erkennt keine Byte-Änderung an dieser Datei), und wer schon
+// eine ältere app.js im Cache hat, bekommt sie beim ersten Laden nach einem
+// Deploy weiter zusammen mit dem neuen index.html ausgeliefert — genau das
+// hat schon einmal zu einer leeren Seite geführt, weil altes JS auf ein
+// inzwischen entferntes Element zugriff und die Ausführung abbrach.
+const VERSION = 'drop-v3';
 const SHELL = [
   '/',
   '/static/app.js',
+  '/static/i18n.js',
   '/static/style.css',
   '/static/theme.css',
   '/manifest.json',
