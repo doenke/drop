@@ -12,14 +12,6 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/static/theme.css">
 <link rel="stylesheet" href="/static/style.css">
-<script>
-  // Ein gespeichertes Farbschema muss vor dem ersten Rendern stehen, sonst
-  // blitzt kurz das Schema des Betriebssystems auf.
-  try {
-    var stored = localStorage.getItem('drop-theme');
-    if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
-  } catch (e) { /* privater Modus ohne localStorage */ }
-</script>
 <script src="/static/i18n.js" defer></script>
 <script src="/static/app.js" defer></script>
 </head>
@@ -41,8 +33,6 @@
       <img id="avatar" class="avatar" alt="" width="28" height="28" hidden>
       <span id="account-name"></span>
     </span>
-    <button id="theme-toggle" class="theme-toggle" type="button"
-            data-i18n-aria-label="theme_toggle_aria_label"></button>
   </div>
 </header>
 
