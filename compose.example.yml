@@ -13,6 +13,14 @@ services:
       - "8080:8080"
     networks:
       - bridge-net
+    healthcheck:
+      # Das Image ist distroless und hat weder Shell noch curl; das Binary
+      # prüft sich deshalb selbst per -healthcheck-Flag gegen /healthz.
+      test: ["CMD", "/drop", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
 networks:
   bridge-net:

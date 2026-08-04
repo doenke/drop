@@ -5,7 +5,11 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
+	"fmt"
+	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,13 +26,66 @@ import (
 )
 
 func main() {
+	healthcheck := flag.Bool("healthcheck", false,
+		"fragt /healthz auf der eigenen Adresse ab und beendet sich mit 0 oder 1")
+	flag.Parse()
+
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(log)
+
+	// Das Image enthält weder Shell noch curl, deshalb prüft das Binary sich
+	// selbst — so kommt der Container-Healthcheck ohne zusätzliche Werkzeuge
+	// aus.
+	if *healthcheck {
+		if err := probe(); err != nil {
+			log.Error("Healthcheck fehlgeschlagen", "err", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	if err := run(log); err != nil {
 		log.Error("Start fehlgeschlagen", "err", err)
 		os.Exit(1)
 	}
+}
+
+// probe fragt /healthz auf der Adresse ab, auf der der Server im selben
+// Container lauscht.
+func probe() error {
+	addr := os.Getenv("DROP_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("DROP_ADDR ist keine gültige Adresse: %q", addr)
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		"http://"+net.JoinHostPort(host, port)+"/healthz", nil)
+	if err != nil {
+		return err
+	}
+	// Bewusst ohne Proxy aus der Umgebung: die Anfrage geht an den eigenen
+	// Container, ein gesetztes HTTP_PROXY würde sie nur ins Leere schicken.
+	client := &http.Client{Transport: &http.Transport{Proxy: nil}}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("/healthz antwortet mit %s", resp.Status)
+	}
+	return nil
 }
 
 func run(log *slog.Logger) error {
