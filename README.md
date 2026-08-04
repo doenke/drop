@@ -25,8 +25,6 @@ ist drüben.
   oder herunterladen, alles andere herunterladen.
 - **Als App installieren** – drop ist eine PWA und lässt sich auf dem
   Homescreen ablegen.
-- **Hell oder dunkel** – folgt deinem System oder lässt sich manuell
-  umschalten.
 
 ## Für wen ist das?
 
@@ -58,10 +56,6 @@ services:
     env_file: .env
     ports:
       - "8080:8080"
-```
-
-```bash
-docker compose up -d --build
 ```
 
 Danach öffnest du `http://localhost:8080`. Ein Raum lässt sich erst nach
@@ -109,13 +103,6 @@ brauchst du:
 Provider als Redirect-URI genau `${DROP_PUBLIC_URL}/auth/callback`
 eintragen.
 
-Liefert der `picture`-Claim ein Profilbild, zeigt drop es in der
-Kopfzeile — geholt über den eigenen Server, nicht direkt vom Browser. Der
-Provider erfährt so nicht, wann jemand drop benutzt. Weil die Bildadresse
-aus einem Token stammt, lädt der Server nur von erlaubten Hosts:
-standardmäßig nur vom Issuer, weitere über `DROP_AVATAR_HOSTS`. Ohne Bild
-bleibt die Stelle einfach leer.
-
 Beitreten per QR-Code oder 3-Wörter-Code braucht **kein** Konto — das ist
 für das zweite Gerät gedacht, das nur kurz mitmachen soll.
 
@@ -137,31 +124,9 @@ stehen ausführlich kommentiert in [.env.example](.env.example).
 
 ## Für Entwicklerinnen und Entwickler
 
-drop ist ein einziges Go-Binary. Frontend, Wortliste, Icons, Manifest und
-Service Worker stecken per `embed.FS` mit drin — es gibt keine Dateien
-daneben, keine Datenbank, kein Volume. Räume leben ausschließlich im RAM
-und werden nach kurzer Leerlaufzeit automatisch aufgeräumt.
-
-```sh
-go build ./...
-go vet ./...
-go test ./...            # Unit-Tests plus WebSocket-Integrationstest
-```
-
 Zum lokalen Start werden `DROP_PUBLIC_URL`, `DROP_OIDC_ISSUER` und
 `DROP_OIDC_CLIENT_ID` gebraucht; der Issuer muss beim Start erreichbar
 sein, weil drop die OIDC-Discovery sofort durchführt.
-
-Die Farben stehen ausschließlich in [`web/theme.css`](web/theme.css) als
-CSS-Custom-Properties. `web/style.css` greift nur über `var()` darauf zu
-— ein neues Farbschema zieht also an genau einer Stelle ein.
-
-[`web/icons/icon.svg`](web/icons/icon.svg) ist die einzige Quelle für
-Favicon, PWA-Icons und das Icon in der Kopfzeile — alle drei zeigen
-dasselbe Bild. `index.html` und `manifest.json` sind Go-Templates: der
-Server setzt `DROP_TITLE` (Tab-Titel, Kopfzeile, PWA-Name, Footer) und
-`DROP_HEADER_LOGO_URL` einmal beim Start ein (`applyBranding` in
-[`static.go`](static.go)).
 
 ---
 
