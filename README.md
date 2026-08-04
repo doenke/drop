@@ -1,4 +1,6 @@
-# drop 📤✨
+<img src="docs/logo.png" alt="" width="96" height="96">
+
+# drop
 
 drop ist deine schnelle Ablage zwischen Geräten: ein Ort, um Text, Links,
 Passwörter und Dateien vom Rechner aufs Handy zu schieben und zurück, ohne
