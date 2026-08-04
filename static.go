@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"html/template"
 	"io/fs"
 	"mime"
 	"net/http"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/doenke/drop/internal/config"
 )
 
 // asset ist eine eingebettete Datei mitsamt vorberechnetem ETag. Die Dateien
@@ -32,21 +37,96 @@ func init() {
 		if err != nil {
 			return err
 		}
-		sum := sha256.Sum256(body)
 		ct := mime.TypeByExtension(path.Ext(p))
 		if ct == "" {
 			ct = "application/octet-stream"
 		}
-		assets[strings.TrimPrefix(p, "web/")] = asset{
-			body:        body,
-			etag:        `"` + hex.EncodeToString(sum[:8]) + `"`,
-			contentType: ct,
-		}
+		assets[strings.TrimPrefix(p, "web/")] = newAsset(body, ct)
 		return nil
 	})
 	if err != nil {
 		panic("eingebettete Assets nicht lesbar: " + err.Error())
 	}
+}
+
+func newAsset(body []byte, contentType string) asset {
+	sum := sha256.Sum256(body)
+	return asset{
+		body:        body,
+		etag:        `"` + hex.EncodeToString(sum[:8]) + `"`,
+		contentType: contentType,
+	}
+}
+
+// manifestDoc spiegelt web/manifest.json, damit applyBranding Name und
+// Short-Name anpassen kann, ohne den Rest der Datei von Hand nachzubauen.
+type manifestDoc struct {
+	Name            string `json:"name"`
+	ShortName       string `json:"short_name"`
+	Description     string `json:"description"`
+	Lang            string `json:"lang"`
+	Dir             string `json:"dir"`
+	StartURL        string `json:"start_url"`
+	Scope           string `json:"scope"`
+	Display         string `json:"display"`
+	Orientation     string `json:"orientation"`
+	BackgroundColor string `json:"background_color"`
+	ThemeColor      string `json:"theme_color"`
+	Icons           []struct {
+		Src     string `json:"src"`
+		Sizes   string `json:"sizes"`
+		Type    string `json:"type"`
+		Purpose string `json:"purpose,omitempty"`
+	} `json:"icons"`
+}
+
+// brandingData sind die Werte, die index.html als Go-Template einsetzt.
+type brandingData struct {
+	Title         string
+	HeaderLogoURL string
+}
+
+// applyBranding rendert index.html und manifest.json mit dem konfigurierten
+// Titel und optionalen Kopfzeilen-Logo. Muss einmal nach dem Laden der
+// Konfiguration laufen, bevor der Server Verbindungen annimmt — danach liest
+// niemand mehr aus assets, während hier geschrieben wird.
+//
+// Die Quelle kommt bei jedem Aufruf frisch aus dem unveränderlichen webFS,
+// nie aus der assets-Map: die enthält nach dem ersten Lauf schon das fertig
+// gerenderte HTML ohne Platzhalter, ein zweiter Durchlauf daraus hätte also
+// nichts mehr zum Ersetzen.
+func applyBranding(cfg *config.Config) error {
+	idxSource, err := fs.ReadFile(webFS, "web/index.html")
+	if err != nil {
+		return fmt.Errorf("index.html lesen: %w", err)
+	}
+	tmpl, err := template.New("index.html").Parse(string(idxSource))
+	if err != nil {
+		return fmt.Errorf("index.html als Template lesen: %w", err)
+	}
+	var buf bytes.Buffer
+	data := brandingData{Title: cfg.Title, HeaderLogoURL: cfg.HeaderLogoURL}
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("index.html rendern: %w", err)
+	}
+	assets["index.html"] = newAsset(buf.Bytes(), assets["index.html"].contentType)
+
+	manSource, err := fs.ReadFile(webFS, "web/manifest.json")
+	if err != nil {
+		return fmt.Errorf("manifest.json lesen: %w", err)
+	}
+	var manifest manifestDoc
+	if err := json.Unmarshal(manSource, &manifest); err != nil {
+		return fmt.Errorf("manifest.json lesen: %w", err)
+	}
+	manifest.Name = cfg.Title
+	manifest.ShortName = cfg.Title
+	out, err := json.MarshalIndent(&manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("manifest.json rendern: %w", err)
+	}
+	assets["manifest.json"] = newAsset(out, assets["manifest.json"].contentType)
+	return nil
 }
 
 // mountStatic registriert die App-Shell und alle statischen Dateien. Die Shell

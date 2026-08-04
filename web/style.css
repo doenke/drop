@@ -78,12 +78,23 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
   letter-spacing: -0.02em;
   font-size: 1.15rem;
 }
+/* Dasselbe Icon wie der Favicon (/icons/icon.svg) — die Rundung bringt die
+   SVG selbst mit, hier bleibt nur Größe und Glow. */
 .brand-mark {
+  display: block;
   width: 1.35rem;
   height: 1.35rem;
-  border-radius: 0.5rem 0.5rem 0.5rem 0.15rem;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2));
   box-shadow: var(--glow);
+}
+
+/* Optionales Betreiber-Logo ganz links, vor dem drop-Icon. Ohne
+   DROP_HEADER_LOGO_URL steht das Element gar nicht erst im Markup. */
+.header-logo {
+  display: block;
+  height: 1.6rem;
+  width: auto;
+  max-width: 8rem;
+  object-fit: contain;
 }
 
 .topbar-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
@@ -426,6 +437,23 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
 .toast[data-kind="ok"] { border-color: var(--accent); color: var(--accent); }
 
 .noscript { max-width: 40rem; margin: 2rem auto; color: var(--muted); }
+
+.site-footer {
+  width: min(var(--container), 100%);
+  margin: 2rem auto 0;
+  padding: 1.5rem 0 2.5rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+.site-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.15em;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.site-footer a:hover { color: var(--accent); text-decoration-color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

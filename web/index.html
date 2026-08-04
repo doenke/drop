@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-<title>drop</title>
+<title>{{.Title}}</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -27,8 +27,9 @@
 
 <header class="topbar">
   <a class="brand" href="/">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span class="brand-name">drop</span>
+    {{if .HeaderLogoURL}}<img class="header-logo" src="{{.HeaderLogoURL}}" alt="">{{end}}
+    <img class="brand-mark" src="/icons/icon.svg" alt="" aria-hidden="true">
+    <span class="brand-name">{{.Title}}</span>
   </a>
   <div class="topbar-right">
     <span id="conn" class="conn" data-state="offline" title="Verbindung">
@@ -127,6 +128,12 @@
     </div>
   </section>
 </main>
+
+<footer class="site-footer">
+  <p>{{.Title}} ist quelloffen.
+    <a href="https://github.com/doenke/drop" target="_blank" rel="noopener noreferrer">Quellcode auf GitHub</a>
+  </p>
+</footer>
 
 <div id="dropzone" class="dropzone" hidden>
   <div class="dropzone-inner">Loslassen zum Senden</div>
