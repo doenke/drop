@@ -28,7 +28,7 @@ ist drüben.
 - **Als App installieren** – drop ist eine PWA und lässt sich auf dem
   Homescreen ablegen.
 - **Auf Englisch oder Deutsch** – die Oberfläche erkennt automatisch die
-  Sprache des Browsers, ganz ohne Umschalter.
+  Sprache des Browsers.
 
 ## Für wen ist das?
 
@@ -38,7 +38,7 @@ drop passt zu dir, wenn du ...
   herschickst,
 - Screenshots nicht extra an dich selbst mailen willst,
 - kurz jemandem ohne Account eine Datei zuschieben musst,
-- selbst hostest und weißt, wo deine Daten liegen — hier: nirgends, denn es
+- selbst hostest und wissen willst, wo deine Daten liegen — hier: nirgends, denn es
   wird nichts gespeichert.
 
 ## Schnellstart mit Docker
@@ -61,6 +61,7 @@ services:
     ports:
       - "8080:8080"
 ```
+Ein Volume ist absichtlich nicht dabei — drop persistiert nichts.
 
 Danach öffnest du `http://localhost:8080`. Ein Raum lässt sich erst nach
 dem Login erstellen — Beitreten per Code funktioniert immer, ganz ohne
@@ -126,51 +127,11 @@ Für den normalen Betrieb brauchst du nur wenige Werte:
 Alle Werte inklusive Transfer-Limits, Raum-Lebensdauer und Rate-Limit
 stehen ausführlich kommentiert in [.env.example](.env.example).
 
-## Für Entwicklerinnen und Entwickler
-
-Zum lokalen Start werden `DROP_PUBLIC_URL`, `DROP_OIDC_ISSUER` und
-`DROP_OIDC_CLIENT_ID` gebraucht; der Issuer muss beim Start erreichbar
-sein, weil drop die OIDC-Discovery sofort durchführt.
-
 ---
 
-## Technische Doku
+## Technikraum
 
-Dieser Abschnitt ist für alle gedacht, die drop dauerhaft betreiben,
-automatisieren oder in eine bestehende Homelab-/Server-Umgebung einbauen
-möchten.
-
-### Vollständige `docker-compose.yml`
-
-```yaml
-services:
-  drop:
-    build: https://github.com/doenke/drop.git#main
-    image: drop-drop:latest
-    container_name: drop
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "8080:8080"
-    networks:
-      - bridge-net
-    healthcheck:
-      # Das Image ist distroless und hat weder Shell noch curl; das Binary
-      # prüft sich deshalb selbst per -healthcheck-Flag gegen /healthz.
-      test: ["CMD", "/drop", "-healthcheck"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-
-networks:
-  bridge-net:
-    external: true
-```
-
-Ein Volume ist absichtlich nicht dabei — drop persistiert nichts. Die
-vollständig kommentierte Vorlage liegt unter
-[compose.example.yml](compose.example.yml).
+Die vollständig kommentierte Compose Vorlage liegt unter [compose.example.yml](compose.example.yml).
 
 ### Reverse Proxy (z. B. Nginx Proxy Manager)
 
@@ -199,18 +160,6 @@ nicht kappt.
 - `DROP_AVATAR_HOSTS` ist der SSRF-Schutz des Profilbild-Proxys — je
   kürzer die Liste, desto besser.
 
-### Endpunkte
-
-| Endpunkt | Zweck |
-| --- | --- |
-| `GET /` | App-Shell |
-| `GET /r/{token}` | dieselbe Shell, tritt direkt dem Raum bei (Ziel des QR-Codes) |
-| `GET /ws` | WebSocket: Räume anlegen, beitreten, alle Inhalte |
-| `GET /auth/login`, `/auth/callback` · `POST /auth/logout` | OIDC |
-| `GET /api/me` | Anmeldestatus fürs Frontend |
-| `GET /api/avatar` | Profilbild der eigenen Session, über den Server geholt |
-| `GET /api/qr?token=…` | QR-Code des Raum-Links als PNG |
-| `GET /healthz` | Liveness, auch Ziel des `-healthcheck`-Selbsttests |
 
 ## Lizenz
 
