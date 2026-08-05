@@ -8,6 +8,29 @@
 (() => {
   'use strict';
 
+  // Service-Worker-Registrierung ganz an den Anfang, vor allem, was später
+  // im Skript noch werfen könnte: ein Deploy kann eine bereits gecachte
+  // app.js unbrauchbar machen (fehlendes Element o. Ä.), und genau dann muss
+  // trotzdem noch ein neuer Service Worker installiert werden können. Läuft
+  // die Seite schon unter einem Controller (Wiederkehrer), lädt sie sich
+  // automatisch genau einmal neu, sobald ein neuer Service Worker übernimmt
+  // — sonst bräuchte es von Hand mehrere Reloads, bis der alte Cache durch
+  // ist. Beim allerersten Besuch gibt es noch keinen Controller, und ein
+  // Reload direkt nach dem ersten Laden wäre nur störend.
+  if ('serviceWorker' in navigator) {
+    if (navigator.serviceWorker.controller) {
+      let reloadedForUpdate = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadedForUpdate) return;
+        reloadedForUpdate = true;
+        location.reload();
+      });
+    }
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* ohne SW laeuft alles weiter */ });
+    });
+  }
+
   const CHUNK_SIZE = 64 * 1024;
   // Ab dieser Fuellhoehe des Sendepuffers wird pausiert. Das ist die
   // Client-Seite der Backpressure: ohne sie wuerde eine grosse Datei den
@@ -706,12 +729,6 @@
       // Der Login soll nach dem Anmelden wieder hier landen.
       el.btnLogin.href = `/auth/login?next=${encodeURIComponent(location.pathname)}`;
       send({ type: 'join', token: decodeURIComponent(match[1]) });
-    }
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => { /* ohne SW laeuft alles weiter */ });
-      });
     }
   }
 
