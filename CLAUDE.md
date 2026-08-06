@@ -41,6 +41,10 @@ Verhaltensfragen dort nachsehen; SPEC.md gewinnt bei Konflikten.
   direkt drauflos bauen.
 - Git von Anfang an; kleine, nachvollziehbare Commits.
 - Secrets (OIDC-Client-Secret etc.) nur über Env/`.env`, niemals ins Repo.
+- **README ist zweisprachig:** `README.md` (Englisch, Standard) und
+  `README.de.md` (Deutsch) sind zwei getrennte Dateien ohne gemeinsame
+  Quelle — bei jeder inhaltlichen Änderung an der einen **immer auch die
+  andere nachziehen**, sonst laufen sie auseinander.
 
 ## Verifikation
 - `go build ./...` muss durchlaufen.
