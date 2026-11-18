@@ -308,6 +308,8 @@ main { width: min(var(--container), 100%); margin: 0 auto; }
 }
 .live-text:focus { outline: none; border-color: var(--accent); box-shadow: var(--glow); }
 
+.live-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
 .feed-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
 .feed { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.75rem; }

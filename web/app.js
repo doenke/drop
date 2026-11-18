@@ -61,6 +61,8 @@
     btnLeave: document.getElementById('btn-leave'),
     liveText: document.getElementById('live-text'),
     liveState: document.getElementById('live-state'),
+    btnLiveCopy: document.getElementById('btn-live-copy'),
+    btnLivePaste: document.getElementById('btn-live-paste'),
     btnPaste: document.getElementById('btn-paste'),
     btnFile: document.getElementById('btn-file'),
     fileInput: document.getElementById('file-input'),
@@ -335,6 +337,28 @@
     if (!inRoom()) return;
     send({ type: 'text-sync', full: el.liveText.value });
     el.liveState.textContent = I18N.t('live_state_synced');
+  }
+
+  // pasteIntoLiveText ersetzt den Inhalt der Live-Box durch die
+  // Zwischenablage und synchronisiert sofort, statt auf die Debounce-Zeit
+  // des 'input'-Events zu warten — das Setzen von .value loest das Event
+  // selbst ja nicht aus.
+  async function pasteIntoLiveText() {
+    if (!inRoom()) return;
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      toast(I18N.t('toast_clipboard_unavailable'), 'error');
+      return;
+    }
+    let text;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      toast(I18N.t('toast_clipboard_unreadable'), 'error');
+      return;
+    }
+    clearTimeout(state.textTimer);
+    el.liveText.value = text;
+    flushText();
   }
 
   function applyRemoteText(msg) {
@@ -644,6 +668,9 @@
   el.btnCopyLink.addEventListener('click', () => copyText(state.room ? state.room.url : ''));
   el.btnCopyCode.addEventListener('click', () => copyText(state.room ? state.room.code.replace(/-/g, ' ') : ''));
   el.btnLeave.addEventListener('click', () => leaveRoom());
+
+  el.btnLiveCopy.addEventListener('click', () => copyText(el.liveText.value));
+  el.btnLivePaste.addEventListener('click', pasteIntoLiveText);
 
   el.btnPaste.addEventListener('click', pasteFromClipboard);
   el.btnFile.addEventListener('click', () => el.fileInput.click());
