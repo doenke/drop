@@ -56,8 +56,7 @@ below).
 ```yaml
 services:
   drop:
-    build: https://github.com/doenke/drop.git#main
-    image: drop-drop:latest
+    image: ghcr.io/doenke/drop:latest
     container_name: drop
     restart: unless-stopped
     env_file: .env
@@ -65,6 +64,11 @@ services:
       - "8080:8080"
 ```
 A volume is deliberately not included — drop persists nothing.
+
+The image is built by GitHub Actions on every push to `main`, for amd64
+and arm64 (Raspberry Pi and friends). `docker compose pull` fetches the
+latest version. Prefer building from source? Replace the `image:` line
+with `build: https://github.com/doenke/drop.git#main`.
 
 Then open `http://localhost:8080`. Creating a room requires signing in
 first — joining via code always works, without an account.

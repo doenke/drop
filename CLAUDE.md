@@ -29,8 +29,11 @@ Verhaltensfragen dort nachsehen; SPEC.md gewinnt bei Konflikten.
   liefernden Basis-CSS (nicht hart kodieren).
 
 ## Konventionen (Homelab)
-- Repo unter github.com/doenke; läuft als lokaler Compose-Build
-  (`build: https://github.com/doenke/drop.git#main`), Image `drop-drop:latest`.
+- Repo unter github.com/doenke. Das Image baut GitHub Actions
+  (`.github/workflows/image.yml`) bei jedem Push auf main als
+  `ghcr.io/doenke/drop:latest` (amd64 + arm64); Compose zieht es per
+  `image:`. Ein lokaler Build aus dem Repo
+  (`build: https://github.com/doenke/drop.git#main`) geht weiterhin.
 - Deployment: Bridge-Netz, hinter NPM, `drop.kanonenwiese.de`, Force-SSL,
   WebSockets-Support an.
 - Volume-Pfad-Konvention im Homelab: `/data/container/[name]/config` —

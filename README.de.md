@@ -55,8 +55,7 @@ und einen `DROP_SESSION_KEY` ein (siehe unten, „Login per OIDC“).
 ```yaml
 services:
   drop:
-    build: https://github.com/doenke/drop.git#main
-    image: drop-drop:latest
+    image: ghcr.io/doenke/drop:latest
     container_name: drop
     restart: unless-stopped
     env_file: .env
@@ -64,6 +63,11 @@ services:
       - "8080:8080"
 ```
 Ein Volume ist absichtlich nicht dabei — drop persistiert nichts.
+
+Das Image baut GitHub Actions bei jedem Push auf `main`, für amd64 und
+arm64 (Raspberry Pi & Co.). `docker compose pull` holt die neueste
+Version. Lieber selbst aus dem Quellcode bauen? Dann statt der
+`image:`-Zeile `build: https://github.com/doenke/drop.git#main` eintragen.
 
 Danach öffnest du `http://localhost:8080`. Ein Raum lässt sich erst nach
 dem Login erstellen — Beitreten per Code funktioniert immer, ganz ohne
