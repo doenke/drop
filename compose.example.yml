@@ -1,11 +1,13 @@
-# Vorlage für den Homelab-Compose-Stack. Wie gardenglow und autostrom wird
-# direkt aus dem Repo gebaut; ein Volume braucht drop nicht, weil nichts
-# gespeichert wird.
+# Vorlage für den Homelab-Compose-Stack. Das fertige Image baut GitHub
+# Actions bei jedem Push auf main (amd64 und arm64); ein Volume braucht drop
+# nicht, weil nichts gespeichert wird.
+#
+# Lieber selbst aus dem Quellcode bauen? Statt der image-Zeile:
+#   build: https://github.com/doenke/drop.git#main
 
 services:
   drop:
-    build: https://github.com/doenke/drop.git#main
-    image: drop-drop:latest
+    image: ghcr.io/doenke/drop:latest
     container_name: drop
     restart: unless-stopped
     env_file: .env
